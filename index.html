@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>值班日期推算工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="date"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+            display: none;
+        }
+        .duty-day {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .month-section {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .month-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #337ab7;
+        }
+        #qrcode {
+            margin: 20px auto;
+            text-align: center;
+        }
+        .share-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f3fe;
+            border-radius: 4px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>值班日期推算工具</h1>
+        <div>
+            <label for="startDate">初始值班日期:</label>
+            <input type="date" id="startDate" required>
+        </div>
+        <div>
+            <label for="months">推算月份数 (1-6个月):</label>
+            <select id="months" required>
+                <option value="1">1个月</option>
+                <option value="2">2个月</option>
+                <option value="3" selected>3个月</option>
+                <option value="4">4个月</option>
+                <option value="5">5个月</option>
+                <option value="6">6个月</option>
+            </select>
+        </div>
+        <button onclick="calculateDutyDays()">计算值班日期</button>
+        <div id="result"></div>
+        <div id="share" class="share-section" style="display:none;">
+            <h3>分享当前排班表</h3>
+            <button onclick="generateQRCode()">生成二维码</button>
+            <div id="qrcode"></div>
+        </div>
+    </div>
+
+    <!-- 引入QRCode库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    
+    <script>
+        function calculateDutyDays() {
+            const startDateInput = document.getElementById('startDate').value;
+            const months = parseInt(document.getElementById('months').value);
+            
+            if (!startDateInput) {
+                alert('请输入初始值班日期');
+                return;
+            }
+            
+            if (months < 1 || months > 6) {
+                alert('请选择1-6个月之间的推算范围');
+                return;
+            }
+            
+            const startDate = new Date(startDateInput);
+            const resultDiv = document.getElementById('result');
+            const shareSection = document.getElementById('share');
+            
+            // 清空之前的结果
+            resultDiv.innerHTML = '';
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // 计算指定月份数内的值班日期
+            const dutyDays = [];
+            const endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + months); // 推算几个月后的日期
+            
+            let currentDate = new Date(startDate);
+            
+            while (currentDate <= endDate) {
+                dutyDays.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 6); // 每隔5天，加上当天就是6天
+            }
+            
+            // 显示结果
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<h3>未来${months}个月内的值班日期:</h3>`;
+            
+            if (dutyDays.length === 0) {
+                resultDiv.innerHTML += '<p>在指定时间段内没有值班日期。</p>';
+            } else {
+                // 按月份分组显示
+                const monthsData = groupByMonth(dutyDays);
+                
+                monthsData.forEach(monthData => {
+                    const monthDiv = document.createElement('div');
+                    monthDiv.className = 'month-section';
+                    
+                    const monthTitle = document.createElement('div');
+                    monthTitle.className = 'month-title';
+                    monthTitle.textContent = `${monthData.year}年${monthData.month}月`;
+                    monthDiv.appendChild(monthTitle);
+                    
+                    const list = document.createElement('ul');
+                    
+                    monthData.days.forEach(day => {
+                        const item = document.createElement('li');
+                        const formattedDate = formatDate(day);
+                        item.innerHTML = `<span class="duty-day">${formattedDate}</span> (${getDayName(day)})`;
+                        list.appendChild(item);
+                    });
+                    
+                    monthDiv.appendChild(list);
+                    resultDiv.appendChild(monthDiv);
+                });
+                
+                resultDiv.innerHTML += `<p>共找到 ${dutyDays.length} 个值班日期。</p>`;
+                
+                // 显示分享区域
+                shareSection.style.display = 'block';
+            }
+        }
+        
+        // 生成二维码
+        function generateQRCode() {
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = ''; // 清除旧的二维码
+            
+            // 获取当前页面的URL（如果是本地文件，则使用输入数据生成分享数据）
+            let shareData = window.location.href;
+            
+            // 如果是本地文件，无法直接分享URL，改为分享数据内容
+            if (window.location.protocol === 'file:') {
+                const startDate = document.getElementById('startDate').value;
+                const months = document.getElementById('months').value;
+                shareData = `值班排班数据|开始日期:${startDate}|月份数:${months}`;
+            }
+            
+            // 生成二维码
+            new QRCode(qrcodeDiv, {
+                text: shareData,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+        
+        // 按月份分组日期
+        function groupByMonth(dates) {
+            const monthsMap = new Map();
+            
+            dates.forEach(date => {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const key = `${year}-${month}`;
+                
+                if (!monthsMap.has(key)) {
+                    monthsMap.set(key, {
+                        year: year,
+                        month: month,
+                        days: []
+                    });
+                }
+                
+                monthsMap.get(key).days.push(date);
+            });
+            
+            return Array.from(monthsMap.values());
+        }
+        
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function getDayName(date) {
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            return days[date.getDay()];
+        }
+    </script>
+</body>
+</html>
