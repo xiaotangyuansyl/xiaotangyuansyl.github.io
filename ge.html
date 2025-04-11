@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的音乐收藏</title>
+    <style>
+        :root {
+            --primary-color: #4a76a8;
+            --secondary-color: #f5f5f5;
+            --accent-color: #ff6b6b;
+            --text-color: #333;
+            --light-text: #777;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f9f9f9;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #2c3e50);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--secondary-color);
+        }
+
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #3a6690;
+            transform: translateY(-2px);
+        }
+
+        .playlist {
+            padding: 20px;
+        }
+
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .song-item:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .song-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .song-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-url {
+            color: var(--light-text);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .play-btn, .edit-btn, .delete-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .play-btn {
+            background-color: var(--accent-color);
+        }
+
+        .play-btn:hover {
+            background-color: #e05555;
+        }
+
+        .edit-btn {
+            background-color: #4CAF50;
+        }
+
+        .edit-btn:hover {
+            background-color: #3e8e41;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+        }
+
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .no-songs {
+            text-align: center;
+            padding: 40px;
+            color: var(--light-text);
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                flex-direction: column;
+            }
+            
+            .song-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>我的音乐收藏</h1>
+            <p class="subtitle">记录并播放你喜欢的歌曲</p>
+        </header>
+
+        <div class="form-container">
+            <div class="form-group">
+                <input type="text" id="songTitle" placeholder="歌曲名称" required>
+                <input type="url" id="songUrl" placeholder="歌曲URL (MP3/音频链接)" required>
+                <button id="addSong">添加歌曲</button>
+            </div>
+        </div>
+
+        <div class="playlist" id="playlist">
+            <!-- 歌曲列表将在这里动态生成 -->
+            <div class="no-songs">暂无歌曲，请添加你喜欢的音乐</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addSongBtn = document.getElementById('addSong');
+            const songTitleInput = document.getElementById('songTitle');
+            const songUrlInput = document.getElementById('songUrl');
+            const playlist = document.getElementById('playlist');
+            
+            // 从本地存储加载歌曲
+            let songs = JSON.parse(localStorage.getItem('songs')) || [];
+            
+            // 渲染歌曲列表
+            renderPlaylist();
+            
+            // 添加歌曲
+            addSongBtn.addEventListener('click', function() {
+                const title = songTitleInput.value.trim();
+                const url = songUrlInput.value.trim();
+                
+                if (title && url) {
+                    songs.push({ title, url });
+                    saveSongs();
+                    renderPlaylist();
+                    
+                    // 清空输入框
+                    songTitleInput.value = '';
+                    songUrlInput.value = '';
+                } else {
+                    alert('请填写歌曲名称和URL');
+                }
+            });
+            
+            // 渲染播放列表
+            function renderPlaylist() {
+                if (songs.length === 0) {
+                    playlist.innerHTML = '<div class="no-songs">暂无歌曲，请添加你喜欢的音乐</div>';
+                    return;
+                }
+                
+                playlist.innerHTML = '';
+                
+                songs.forEach((song, index) => {
+                    const songItem = document.createElement('div');
+                    songItem.className = 'song-item';
+                    songItem.innerHTML = `
+                        <div class="song-info">
+                            <div class="song-title">${song.title}</div>
+                            <div class="song-url">${song.url}</div>
+                            <audio class="audio-player" controls>
+                                <source src="${song.url}" type="audio/mpeg">
+                                您的浏览器不支持音频元素。
+                            </audio>
+                        </div>
+                        <div class="song-actions">
+                            <button class="play-btn" data-index="${index}">播放</button>
+                            <button class="edit-btn" data-index="${index}">编辑</button>
+                            <button class="delete-btn" data-index="${index}">删除</button>
+                        </div>
+                    `;
+                    playlist.appendChild(songItem);
+                });
+                
+                // 添加播放按钮事件
+                document.querySelectorAll('.play-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = this.getAttribute('data-index');
+                        const audioPlayer = this.closest('.song-item').querySelector('.audio-player');
+                        
+                        // 隐藏所有其他播放器
+                        document.querySelectorAll('.audio-player').forEach(player => {
+                            if (player !== audioPlayer) {
+                                player.style.display = 'none';
+                            }
+                        });
+                        
+                        // 切换当前播放器
+                        if (audioPlayer.style.display === 'block') {
+                            audioPlayer.style.display = 'none';
+                            audioPlayer.pause();
+                        } else {
+                            audioPlayer.style.display = 'block';
+                            audioPlayer.play();
+                        }
+                    });
+                });
+                
+                // 添加编辑按钮事件
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = this.getAttribute('data-index');
+                        const song = songs[index];
+                        
+                        const newTitle = prompt('编辑歌曲名称', song.title);
+                        if (newTitle !== null) {
+                            const newUrl = prompt('编辑歌曲URL', song.url);
+                            if (newUrl !== null) {
+                                songs[index] = { title: newTitle.trim(), url: newUrl.trim() };
+                                saveSongs();
+                                renderPlaylist();
+                            }
+                        }
+                    });
+                });
+                
+                // 添加删除按钮事件
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = this.getAttribute('data-index');
+                        if (confirm('确定要删除这首歌曲吗？')) {
+                            songs.splice(index, 1);
+                            saveSongs();
+                            renderPlaylist();
+                        }
+                    });
+                });
+            }
+            
+            // 保存歌曲到本地存储
+            function saveSongs() {
+                localStorage.setItem('songs', JSON.stringify(songs));
+            }
+        });
+    </script>
+</body>
+</html>
