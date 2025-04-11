@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排便记录日历</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .day {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            min-height: 60px;
+            border-radius: 5px;
+        }
+        .day-header {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .empty-day {
+            background-color: #f9f9f9;
+            color: #ccc;
+        }
+        .poop-day {
+            background-color: #fff8e1;
+        }
+        .poop-icon {
+            font-size: 24px;
+        }
+        .alert {
+            background-color: #ffebee;
+            color: #d32f2f;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .today {
+            border: 2px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>排便记录日历</h1>
+    
+    <div class="month-header">
+        <button id="prev-month">上个月</button>
+        <h2 id="current-month">2023年11月</h2>
+        <button id="next-month">下个月</button>
+    </div>
+    
+    <div class="calendar" id="calendar">
+        <!-- 日历将通过JavaScript动态生成 -->
+    </div>
+    
+    <div id="alert-message" class="alert" style="display: none;">
+        您已经超过3天没有排便记录了！
+    </div>
+    
+    <script>
+        // 当前显示的月份和年份
+        let currentDate = new Date();
+        currentDate.setDate(1); // 设置为当月第一天
+        
+        // 从本地存储加载排便记录
+        let poopRecords = JSON.parse(localStorage.getItem('poopRecords')) || {};
+        
+        // 初始化日历
+        function initCalendar() {
+            renderCalendar();
+            
+            // 添加事件监听器
+            document.getElementById('prev-month').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+            
+            document.getElementById('next-month').addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+            
+            // 检查是否需要提醒
+            checkForReminder();
+        }
+        
+        // 渲染日历
+        function renderCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            const monthYearEl = document.getElementById('current-month');
+            
+            // 清空日历
+            calendarEl.innerHTML = '';
+            
+            // 设置月份标题
+            const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+            monthYearEl.textContent = `${currentDate.getFullYear()}年 ${monthNames[currentDate.getMonth()]}`;
+            
+            // 获取当月第一天是星期几 (0-6, 0是星期日)
+            const firstDay = currentDate.getDay();
+            
+            // 获取当月的天数
+            const daysInMonth = new Date(
+                currentDate.getFullYear(), 
+                currentDate.getMonth() + 1, 
+                0
+            ).getDate();
+            
+            // 添加上个月的剩余天数
+            const prevMonthDays = new Date(
+                currentDate.getFullYear(), 
+                currentDate.getMonth(), 
+                0
+            ).getDate();
+            
+            // 添加星期标题
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            weekdays.forEach(day => {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day day-header';
+                dayEl.textContent = day;
+                calendarEl.appendChild(dayEl);
+            });
+            
+            // 添加上个月的剩余天数 (灰色显示)
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day empty-day';
+                dayEl.textContent = prevMonthDays - i;
+                calendarEl.appendChild(dayEl);
+            }
+            
+            // 添加当月的天数
+            const today = new Date();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day';
+                
+                // 检查是否是今天
+                if (i === today.getDate() && 
+                    currentDate.getMonth() === today.getMonth() && 
+                    currentDate.getFullYear() === today.getFullYear()) {
+                    dayEl.classList.add('today');
+                }
+                
+                dayEl.textContent = i;
+                
+                // 检查是否有排便记录
+                const dateKey = formatDateKey(new Date(
+                    currentDate.getFullYear(), 
+                    currentDate.getMonth(), 
+                    i
+                ));
+                
+                if (poopRecords[dateKey]) {
+                    dayEl.classList.add('poop-day');
+                    const poopIcon = document.createElement('div');
+                    poopIcon.className = 'poop-icon';
+                    poopIcon.textContent = '💩';
+                    dayEl.appendChild(poopIcon);
+                }
+                
+                // 添加点击事件来记录排便
+                dayEl.addEventListener('click', () => {
+                    togglePoopRecord(dateKey);
+                    renderCalendar();
+                    checkForReminder();
+                });
+                
+                calendarEl.appendChild(dayEl);
+            }
+            
+            // 计算下个月需要显示的天数
+            const totalCells = firstDay + daysInMonth;
+            const remainingCells = totalCells > 35 ? 42 - totalCells : 35 - totalCells;
+            
+            // 添加下个月的天数 (灰色显示)
+            for (let i = 1; i <= remainingCells; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day empty-day';
+                dayEl.textContent = i;
+                calendarEl.appendChild(dayEl);
+            }
+        }
+        
+        // 切换排便记录
+        function togglePoopRecord(dateKey) {
+            if (poopRecords[dateKey]) {
+                delete poopRecords[dateKey];
+            } else {
+                poopRecords[dateKey] = true;
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('poopRecords', JSON.stringify(poopRecords));
+        }
+        
+        // 检查是否需要提醒
+        function checkForReminder() {
+            const alertEl = document.getElementById('alert-message');
+            const lastPoopDate = getLastPoopDate();
+            
+            if (!lastPoopDate) {
+                alertEl.style.display = 'block';
+                alertEl.textContent = "您还没有记录任何排便数据！";
+                return;
+            }
+            
+            const today = new Date();
+            const diffTime = today - lastPoopDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 3) {
+                alertEl.style.display = 'block';
+                alertEl.textContent = `您已经${diffDays}天没有排便记录了！`;
+            } else {
+                alertEl.style.display = 'none';
+            }
+        }
+        
+        // 获取最后一次排便的日期
+        function getLastPoopDate() {
+            const dates = Object.keys(poopRecords)
+                .map(key => parseDateKey(key))
+                .sort((a, b) => b - a);
+            
+            return dates.length > 0 ? dates[0] : null;
+        }
+        
+        // 将日期格式化为YYYY-MM-DD作为键
+        function formatDateKey(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 从键解析日期
+        function parseDateKey(key) {
+            const [year, month, day] = key.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+        
+        // 初始化日历
+        window.onload = initCalendar;
+    </script>
+</body>
+</html>
