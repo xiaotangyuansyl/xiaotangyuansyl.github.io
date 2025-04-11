@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的音乐收藏</title>
+    <title>智能音乐收藏</title>
     <style>
         :root {
             --primary-color: #4a76a8;
@@ -12,6 +12,8 @@
             --text-color: #333;
             --light-text: #777;
             --border-color: #ddd;
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
         }
 
         * {
@@ -88,6 +90,76 @@
         button:hover {
             background-color: #3a6690;
             transform: translateY(-2px);
+        }
+
+        .search-results {
+            margin-top: 15px;
+            border-radius: 5px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .search-item:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .search-item img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+
+        .search-info {
+            flex: 1;
+        }
+
+        .search-title {
+            font-weight: 600;
+        }
+
+        .search-artist {
+            font-size: 0.8rem;
+            color: var(--light-text);
+        }
+
+        .status-message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: var(--success-color);
+            display: block;
+        }
+
+        .warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: var(--warning-color);
+            display: block;
+        }
+
+        .error {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            display: block;
+        }
+
+        .manual-url-container {
+            margin-top: 10px;
+            display: none;
         }
 
         .playlist {
@@ -188,36 +260,86 @@
 <body>
     <div class="container">
         <header>
-            <h1>我的音乐收藏</h1>
-            <p class="subtitle">记录并播放你喜欢的歌曲</p>
+            <h1>智能音乐收藏</h1>
+            <p class="subtitle">自动搜索并播放你喜欢的歌曲</p>
         </header>
 
         <div class="form-container">
             <div class="form-group">
-                <input type="text" id="songTitle" placeholder="歌曲名称" required>
-                <input type="url" id="songUrl" placeholder="歌曲URL (MP3/音频链接)" required>
-                <button id="addSong">添加歌曲</button>
+                <input type="text" id="songTitle" placeholder="输入歌曲名称" required>
+                <button id="searchSong">搜索歌曲</button>
+            </div>
+            
+            <div id="statusMessage" class="status-message"></div>
+            
+            <div class="search-results" id="searchResults">
+                <!-- 搜索结果将在这里显示 -->
+            </div>
+            
+            <div class="manual-url-container" id="manualUrlContainer">
+                <div class="form-group">
+                    <input type="url" id="songUrl" placeholder="手动输入歌曲URL (MP3/音频链接)" required>
+                    <button id="addSong">添加歌曲</button>
+                </div>
             </div>
         </div>
 
         <div class="playlist" id="playlist">
             <!-- 歌曲列表将在这里动态生成 -->
-            <div class="no-songs">暂无歌曲，请添加你喜欢的音乐</div>
+            <div class="no-songs">暂无歌曲，请搜索并添加你喜欢的音乐</div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const searchSongBtn = document.getElementById('searchSong');
             const addSongBtn = document.getElementById('addSong');
             const songTitleInput = document.getElementById('songTitle');
             const songUrlInput = document.getElementById('songUrl');
             const playlist = document.getElementById('playlist');
+            const searchResults = document.getElementById('searchResults');
+            const statusMessage = document.getElementById('statusMessage');
+            const manualUrlContainer = document.getElementById('manualUrlContainer');
             
             // 从本地存储加载歌曲
             let songs = JSON.parse(localStorage.getItem('songs')) || [];
+            let currentSearchResults = [];
             
             // 渲染歌曲列表
             renderPlaylist();
+            
+            // 搜索歌曲
+            searchSongBtn.addEventListener('click', async function() {
+                const title = songTitleInput.value.trim();
+                
+                if (!title) {
+                    showStatus('请输入歌曲名称', 'error');
+                    return;
+                }
+                
+                showStatus('正在搜索歌曲...', 'warning');
+                searchResults.style.display = 'none';
+                manualUrlContainer.style.display = 'none';
+                
+                try {
+                    // 这里使用一个模拟的音乐搜索API
+                    // 实际应用中，你需要替换为真实的音乐API，如网易云音乐、QQ音乐等
+                    currentSearchResults = await mockSearchMusic(title);
+                    
+                    if (currentSearchResults.length > 0) {
+                        showStatus(`找到 ${currentSearchResults.length} 个结果`, 'success');
+                        renderSearchResults(currentSearchResults);
+                        searchResults.style.display = 'block';
+                    } else {
+                        showStatus('没有找到匹配的歌曲，请手动输入URL', 'warning');
+                        manualUrlContainer.style.display = 'block';
+                        songUrlInput.focus();
+                    }
+                } catch (error) {
+                    showStatus('搜索失败: ' + error.message, 'error');
+                    manualUrlContainer.style.display = 'block';
+                }
+            });
             
             // 添加歌曲
             addSongBtn.addEventListener('click', function() {
@@ -232,15 +354,44 @@
                     // 清空输入框
                     songTitleInput.value = '';
                     songUrlInput.value = '';
+                    searchResults.style.display = 'none';
+                    manualUrlContainer.style.display = 'none';
+                    statusMessage.style.display = 'none';
                 } else {
-                    alert('请填写歌曲名称和URL');
+                    showStatus('请填写歌曲名称和URL', 'error');
                 }
             });
+            
+            // 渲染搜索结果
+            function renderSearchResults(results) {
+                searchResults.innerHTML = '';
+                
+                results.forEach((result, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'search-item';
+                    item.innerHTML = `
+                        <img src="${result.cover || 'https://via.placeholder.com/40'}" alt="封面">
+                        <div class="search-info">
+                            <div class="search-title">${result.title}</div>
+                            <div class="search-artist">${result.artist || '未知艺术家'}</div>
+                        </div>
+                    `;
+                    
+                    item.addEventListener('click', function() {
+                        songUrlInput.value = result.url;
+                        manualUrlContainer.style.display = 'block';
+                        showStatus('已选择歌曲，点击"添加歌曲"保存', 'success');
+                        songUrlInput.focus();
+                    });
+                    
+                    searchResults.appendChild(item);
+                });
+            }
             
             // 渲染播放列表
             function renderPlaylist() {
                 if (songs.length === 0) {
-                    playlist.innerHTML = '<div class="no-songs">暂无歌曲，请添加你喜欢的音乐</div>';
+                    playlist.innerHTML = '<div class="no-songs">暂无歌曲，请搜索并添加你喜欢的音乐</div>';
                     return;
                 }
                 
@@ -277,6 +428,7 @@
                         document.querySelectorAll('.audio-player').forEach(player => {
                             if (player !== audioPlayer) {
                                 player.style.display = 'none';
+                                player.pause();
                             }
                         });
                         
@@ -297,15 +449,15 @@
                         const index = this.getAttribute('data-index');
                         const song = songs[index];
                         
-                        const newTitle = prompt('编辑歌曲名称', song.title);
-                        if (newTitle !== null) {
-                            const newUrl = prompt('编辑歌曲URL', song.url);
-                            if (newUrl !== null) {
-                                songs[index] = { title: newTitle.trim(), url: newUrl.trim() };
-                                saveSongs();
-                                renderPlaylist();
-                            }
-                        }
+                        songTitleInput.value = song.title;
+                        songUrlInput.value = song.url;
+                        manualUrlContainer.style.display = 'block';
+                        showStatus('正在编辑歌曲，修改后点击"添加歌曲"保存', 'warning');
+                        
+                        // 删除原歌曲
+                        songs.splice(index, 1);
+                        saveSongs();
+                        renderPlaylist();
                     });
                 });
                 
@@ -325,6 +477,43 @@
             // 保存歌曲到本地存储
             function saveSongs() {
                 localStorage.setItem('songs', JSON.stringify(songs));
+            }
+            
+            // 显示状态消息
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message ' + type;
+                statusMessage.style.display = 'block';
+            }
+            
+            // 模拟音乐搜索API
+            async function mockSearchMusic(query) {
+                // 模拟网络延迟
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // 这里是模拟数据，实际应用中应该调用真实的音乐API
+                const mockData = [
+                    {
+                        title: `${query} - 官方版`,
+                        artist: '热门歌手',
+                        url: `https://example.com/music/${encodeURIComponent(query)}.mp3`,
+                        cover: 'https://via.placeholder.com/40/4a76a8/ffffff?text=音乐'
+                    },
+                    {
+                        title: `${query} - 现场版`,
+                        artist: '现场演出',
+                        url: `https://example.com/live/${encodeURIComponent(query)}.mp3`,
+                        cover: 'https://via.placeholder.com/40/ff6b6b/ffffff?text=Live'
+                    },
+                    {
+                        title: `${query} - 纯音乐版`,
+                        artist: '乐器演奏',
+                        url: `https://example.com/instrumental/${encodeURIComponent(query)}.mp3`,
+                        cover: 'https://via.placeholder.com/40/4CAF50/ffffff?text=纯音'
+                    }
+                ];
+                
+                return mockData;
             }
         });
     </script>
