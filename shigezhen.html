@@ -3,484 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>十格数学加减法教学工具</title>
+    <title>十格阵练习游戏</title>
     <style>
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background-color: #f0f9ff;
+            font-family: Arial, sans-serif;
             text-align: center;
-            margin: 0;
-            padding: 20px;
+            margin: 20px;
+            background-color: #f5f5f5;
         }
-        
-        .game-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
         h1 {
-            color: #ff6b6b;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            color: #333;
             margin-bottom: 10px;
         }
-        
-        .subtitle {
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
-        .ten-frame {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-gap: 10px;
-            margin: 20px auto;
-            width: 300px;
-        }
-        
-        .cell {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #4caf50;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            background-color: #f8fff8;
-            position: relative;
-            cursor: pointer;
-        }
-        
-        .cell.filled {
-            background-color: #a5d6a7;
-        }
-        
-        .cell.filled::after {
-            content: "●";
-            color: #2e7d32;
-            font-size: 30px;
-        }
-        
         .controls {
-            margin: 20px 0;
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .ten-frame-container {
+            display: inline-block;
+            margin: 10px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .ten-frame-row {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-bottom: 5px;
         }
-        
-        .btn {
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 30px;
+        .cell {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 18px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            font-weight: bold;
+            margin: 0 3px;
+            background-color: white;
         }
-        
-        .btn:hover {
-            background-color: #3e8e41;
+        .red-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ff5252;
         }
-        
-        .btn-blue {
+        .blue-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
             background-color: #4285f4;
         }
-        
-        .btn-blue:hover {
-            background-color: #3367d6;
-        }
-        
-        .btn-red {
-            background-color: #ef5350;
-        }
-        
-        .btn-red:hover {
-            background-color: #d32f2f;
-        }
-        
-        .problem-area {
-            margin: 20px 0;
-            font-size: 28px;
-            min-height: 50px;
-        }
-        
-        .number-input {
-            font-size: 24px;
-            width: 60px;
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
             text-align: center;
-            padding: 5px;
-            border: 2px solid #4caf50;
-            border-radius: 8px;
-            margin: 0 10px;
-        }
-        
-        .feedback {
-            font-size: 24px;
-            font-weight: bold;
-            min-height: 30px;
-            margin: 15px 0;
-        }
-        
-        .correct {
-            color: #4caf50;
-        }
-        
-        .incorrect {
-            color: #ef5350;
-        }
-        
-        .mode-selector {
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .mode-btn {
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: 2px solid #ddd;
-            background-color: white;
-            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
             cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .range-selector {
+            margin: 8px 0;
+        }
+        label {
+            margin-right: 8px;
+        }
+        .number-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .number-option {
+            width: 36px;
+            height: 36px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #fff;
             transition: all 0.3s;
         }
-        
-        .mode-btn.active {
-            background-color: #4caf50;
-            color: white;
-            border-color: #4caf50;
+        .number-option:hover {
+            background-color: #f0f0f0;
         }
-        
-        .counter {
-            font-size: 18px;
-            color: #666;
+        .reward {
             margin-top: 15px;
+            font-size: 20px;
+            color: #ff9800;
         }
-        
-        .sound-control {
-            margin-top: 15px;
+        .flowers {
             display: flex;
             justify-content: center;
-            align-items: center;
-            gap: 10px;
+            margin-top: 8px;
         }
-        
-        @media (max-width: 600px) {
-            .ten-frame {
-                width: 250px;
-            }
-            
-            .cell {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .btn {
-                padding: 8px 16px;
-                font-size: 16px;
-            }
+        .flower {
+            font-size: 24px;
+            margin: 0 4px;
+            color: #ff9800;
+            display: none;
+        }
+        .feedback {
+            margin-top: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            height: 24px;
+        }
+        .correct {
+            color: #4CAF50;
+        }
+        .incorrect {
+            color: #f44336;
+        }
+        .instructions {
+            margin: 10px auto;
+            max-width: 500px;
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>十格数学加减法教学工具</h1>
-        <p class="subtitle">通过十格阵学习10以内的加减法</p>
-        
-        <div class="mode-selector">
-            <button class="mode-btn active" data-mode="addition">加法</button>
-            <button class="mode-btn" data-mode="subtraction">减法</button>
-            <button class="mode-btn" data-mode="mixed">混合练习</button>
+    <h1>十格阵练习游戏</h1>
+    <div class="instructions">数一数有多少个圆点，然后点击下方正确的数字</div>
+    
+    <div class="controls">
+        <div class="range-selector">
+            <label>选择数字范围:</label>
+            <input type="radio" id="range1-10" name="range" value="1-10" checked>
+            <label for="range1-10">1-10</label>
+            
+            <input type="radio" id="range11-20" name="range" value="11-20">
+            <label for="range11-20">11-20</label>
+            
+            <input type="radio" id="range1-20" name="range" value="1-20">
+            <label for="range1-20">1-20</label>
         </div>
         
-        <div class="problem-area" id="problemArea">
-            请选择练习模式
-        </div>
-        
-        <div class="ten-frame" id="tenFrame">
-            <!-- 10个格子将通过JavaScript动态生成 -->
-        </div>
-        
-        <div class="controls">
-            <button class="btn btn-blue" id="checkBtn">检查答案</button>
-            <button class="btn" id="newProblemBtn">新题目</button>
-            <button class="btn btn-red" id="resetBtn">重置</button>
-        </div>
-        
+        <button id="generateBtn">开始新游戏</button>
+    </div>
+    
+    <div class="ten-frame-container">
         <div class="feedback" id="feedback"></div>
-        
-        <div>
-            <label for="answerInput">答案：</label>
-            <input type="number" id="answerInput" class="number-input" min="0" max="10">
-        </div>
-        
-        <div class="counter">
-            正确: <span id="correctCount">0</span> | 
-            错误: <span id="wrongCount">0</span>
-        </div>
-        
-        <div class="sound-control">
-            <label for="soundToggle">音效:</label>
-            <input type="checkbox" id="soundToggle" checked>
+        <div id="tenFrame"></div>
+    </div>
+    
+    <div class="number-selector" id="numberSelector"></div>
+    
+    <div class="reward">
+        <div>奖励小红花:</div>
+        <div class="flowers" id="flowers">
+            <div class="flower">🌸</div>
+            <div class="flower">🌸</div>
+            <div class="flower">🌸</div>
+            <div class="flower">🌸</div>
+            <div class="flower">🌸</div>
         </div>
     </div>
-
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generateBtn');
             const tenFrame = document.getElementById('tenFrame');
-            const problemArea = document.getElementById('problemArea');
+            const rangeRadios = document.querySelectorAll('input[name="range"]');
+            const numberSelector = document.getElementById('numberSelector');
             const feedback = document.getElementById('feedback');
-            const answerInput = document.getElementById('answerInput');
-            const checkBtn = document.getElementById('checkBtn');
-            const newProblemBtn = document.getElementById('newProblemBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const correctCountEl = document.getElementById('correctCount');
-            const wrongCountEl = document.getElementById('wrongCount');
-            const modeBtns = document.querySelectorAll('.mode-btn');
-            const soundToggle = document.getElementById('soundToggle');
+            const flowers = document.querySelectorAll('.flower');
             
-            // 游戏状态
-            let currentMode = 'addition';
-            let correctCount = 0;
-            let wrongCount = 0;
-            let currentProblem = null;
-            let filledCells = 0;
-            
-            // 语音合成对象
-            const synth = window.speechSynthesis;
-            
-            // 初始化十格阵
-            function initTenFrame() {
-                tenFrame.innerHTML = '';
-                for (let i = 0; i < 10; i++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.index = i;
-                    cell.addEventListener('click', toggleCell);
-                    tenFrame.appendChild(cell);
-                }
-            }
-            
-            // 切换格子状态
-            function toggleCell(e) {
-                const cell = e.target;
-                cell.classList.toggle('filled');
-                
-                // 播放点击音效
-                if (soundToggle.checked) {
-                    playSound('click');
-                }
-                
-                // 更新填充计数
-                filledCells = document.querySelectorAll('.ten-frame .filled').length;
-                updateProblemDisplay();
-            }
-            
-            // 生成新题目
-            function generateNewProblem() {
-                feedback.textContent = '';
-                answerInput.value = '';
-                filledCells = 0;
-                
-                // 清除所有填充
-                document.querySelectorAll('.ten-frame .filled').forEach(cell => {
-                    cell.classList.remove('filled');
-                });
-                
-                // 根据模式生成题目
-                if (currentMode === 'addition') {
-                    generateAdditionProblem();
-                } else if (currentMode === 'subtraction') {
-                    generateSubtractionProblem();
-                } else {
-                    // 混合模式随机选择加法或减法
-                    Math.random() > 0.5 ? generateAdditionProblem() : generateSubtractionProblem();
-                }
-                
-                updateProblemDisplay();
-            }
-            
-            // 生成加法题目
-            function generateAdditionProblem() {
-                const a = Math.floor(Math.random() * 5) + 1; // 1-5
-                const b = Math.floor(Math.random() * (10 - a)) + 1; // 确保a+b <= 10
-                currentProblem = {
-                    type: 'addition',
-                    a: a,
-                    b: b,
-                    answer: a + b
-                };
-            }
-            
-            // 生成减法题目
-            function generateSubtractionProblem() {
-                const a = Math.floor(Math.random() * 9) + 1; // 1-9
-                const b = Math.floor(Math.random() * a) + 1; // 确保a >= b
-                currentProblem = {
-                    type: 'subtraction',
-                    a: a,
-                    b: b,
-                    answer: a - b
-                };
-            }
-            
-            // 更新题目显示
-            function updateProblemDisplay() {
-                if (!currentProblem) return;
-                
-                let problemText = '';
-                if (currentProblem.type === 'addition') {
-                    problemText = `${currentProblem.a} + ${currentProblem.b} = ?`;
-                } else {
-                    problemText = `${currentProblem.a} - ${currentProblem.b} = ?`;
-                }
-                
-                problemArea.innerHTML = problemText;
-                
-                // 如果是加法模式，显示已经填充的数量
-                if (currentMode === 'addition' || (currentMode === 'mixed' && currentProblem.type === 'addition')) {
-                    problemArea.innerHTML += `<br><small>已填充: ${filledCells}</small>`;
-                }
-            }
-            
-            // 播放音效
-            function playSound(type) {
-                if (!soundToggle.checked) return;
-                
-                const audio = new Audio();
-                audio.volume = 0.5;
-                
-                // 根据类型选择不同的音效
-                if (type === 'correct') {
-                    audio.src = 'https://www.soundjay.com/buttons/sounds/button-09.mp3';
-                } else if (type === 'wrong') {
-                    audio.src = 'https://www.soundjay.com/buttons/sounds/button-10.mp3';
-                } else if (type === 'click') {
-                    audio.src = 'https://www.soundjay.com/buttons/sounds/button-21.mp3';
-                }
-                
-                audio.play().catch(e => console.log('无法播放音效:', e));
-            }
-            
-            // 播放语音
-            function speak(text) {
-                if (!soundToggle.checked || !synth) return;
-                
-                // 取消当前正在播放的语音
-                synth.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                utterance.rate = 0.9;
-                synth.speak(utterance);
-            }
-            
-            // 检查答案
-            function checkAnswer() {
-                if (!currentProblem) {
-                    feedback.textContent = '请先生成一个新题目';
-                    feedback.className = 'feedback incorrect';
-                    return;
-                }
-                
-                const userAnswer = parseInt(answerInput.value);
-                if (isNaN(userAnswer)) {
-                    feedback.textContent = '请输入一个数字';
-                    feedback.className = 'feedback incorrect';
-                    return;
-                }
-                
-                // 检查十格阵中的答案（加法模式）
-                if ((currentMode === 'addition' || (currentMode === 'mixed' && currentProblem.type === 'addition')) && 
-                    filledCells !== currentProblem.answer) {
-                    feedback.textContent = `十格阵中应该有 ${currentProblem.answer} 个点`;
-                    feedback.className = 'feedback incorrect';
-                    
-                    if (soundToggle.checked) {
-                        playSound('wrong');
-                        speak('继续努力');
-                    }
-                    return;
-                }
-                
-                if (userAnswer === currentProblem.answer) {
-                    feedback.textContent = '✓ 正确！太棒了！';
-                    feedback.className = 'feedback correct';
-                    correctCount++;
-                    correctCountEl.textContent = correctCount;
-                    
-                    // 播放正确音效和语音
-                    if (soundToggle.checked) {
-                        playSound('correct');
-                        speak('你真棒');
-                    }
-                    
-                    // 正确后自动生成新题目（延迟1秒）
-                    setTimeout(generateNewProblem, 1000);
-                } else {
-                    feedback.textContent = `✗ 不正确，正确答案是 ${currentProblem.answer}`;
-                    feedback.className = 'feedback incorrect';
-                    wrongCount++;
-                    wrongCountEl.textContent = wrongCount;
-                    
-                    // 播放错误音效和语音
-                    if (soundToggle.checked) {
-                        playSound('wrong');
-                        speak('继续努力');
-                    }
-                }
-            }
-            
-            // 重置游戏
-            function resetGame() {
-                correctCount = 0;
-                wrongCount = 0;
-                correctCountEl.textContent = '0';
-                wrongCountEl.textContent = '0';
-                feedback.textContent = '';
-                answerInput.value = '';
-                generateNewProblem();
-            }
-            
-            // 切换模式
-            function setMode(mode) {
-                currentMode = mode;
-                modeBtns.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.mode === mode);
-                });
-                generateNewProblem();
-            }
-            
-            // 事件监听
-            checkBtn.addEventListener('click', checkAnswer);
-            newProblemBtn.addEventListener('click', generateNewProblem);
-            resetBtn.addEventListener('click', resetGame);
-            
-            modeBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    setMode(this.dataset.mode);
-                });
-            });
-            
-            // 键盘支持
-            answerInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    checkAnswer();
-                }
-            });
+            let currentNumber = 0;
+            let score = 0;
+            let currentRange = '1-10';
             
             // 初始化游戏
-            initTenFrame();
-            generateNewProblem();
+            initGame();
+            
+            // 点击按钮开始新游戏
+            generateBtn.addEventListener('click', initGame);
+            
+            function initGame() {
+                // 重置反馈
+                feedback.textContent = '';
+                feedback.className = 'feedback';
+                
+                // 清空十格阵
+                tenFrame.innerHTML = '';
+                
+                // 获取选中的范围
+                currentRange = '1-10';
+                rangeRadios.forEach(radio => {
+                    if (radio.checked) {
+                        currentRange = radio.value;
+                    }
+                });
+                
+                // 根据范围决定显示的行数
+                let rows = currentRange === '1-10' ? 2 : 4; // 1-10:2行，其他:4行
+                
+                // 创建格子行
+                for (let r = 0; r < rows; r++) {
+                    const row = document.createElement('div');
+                    row.className = 'ten-frame-row';
+                    for (let i = 0; i < 5; i++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        row.appendChild(cell);
+                    }
+                    tenFrame.appendChild(row);
+                }
+                
+                // 获取所有格子元素
+                const cells = document.querySelectorAll('.cell');
+                
+                // 根据范围生成随机数
+                if (currentRange === '1-10') {
+                    currentNumber = Math.floor(Math.random() * 10) + 1;
+                } else if (currentRange === '11-20') {
+                    currentNumber = Math.floor(Math.random() * 10) + 11;
+                } else {
+                    currentNumber = Math.floor(Math.random() * 20) + 1;
+                }
+                
+                // 填充十格阵 - 关键修正点
+                for (let i = 0; i < currentNumber && i < cells.length; i++) {
+                    const dot = document.createElement('div');
+                    // 每个格子的颜色根据其位置决定
+                    // 前10个格子(位置0-9)永远用红色，11-20(位置10-19)永远用蓝色
+                    if (i < 10) {
+                        dot.className = 'red-dot';
+                    } else {
+                        dot.className = 'blue-dot';
+                    }
+                    cells[i].appendChild(dot);
+                }
+                
+                // 创建数字选择器
+                createNumberSelector(currentRange);
+            }
+            
+            function createNumberSelector(range) {
+                numberSelector.innerHTML = '';
+                
+                let start, end;
+                if (range === '1-10') {
+                    start = 1;
+                    end = 10;
+                } else if (range === '11-20') {
+                    start = 11;
+                    end = 20;
+                } else {
+                    start = 1;
+                    end = 20;
+                }
+                
+                for (let i = start; i <= end; i++) {
+                    const numberOption = document.createElement('div');
+                    numberOption.className = 'number-option';
+                    numberOption.textContent = i;
+                    numberOption.addEventListener('click', function() {
+                        checkAnswer(i);
+                    });
+                    numberSelector.appendChild(numberOption);
+                }
+            }
+            
+            function checkAnswer(selectedNumber) {
+                if (selectedNumber === currentNumber) {
+                    feedback.textContent = '答对了！太棒了！';
+                    feedback.className = 'feedback correct';
+                    addFlower();
+                    // 延迟1秒后自动生成新题目
+                    setTimeout(initGame, 1000);
+                } else {
+                    feedback.textContent = '再试试看！';
+                    feedback.className = 'feedback incorrect';
+                }
+            }
+            
+            function addFlower() {
+                score++;
+                if (score > 5) score = 5; // 最多5朵花
+                
+                // 隐藏所有花
+                flowers.forEach(flower => {
+                    flower.style.display = 'none';
+                });
+                
+                // 显示已获得的花
+                for (let i = 0; i < score; i++) {
+                    flowers[i].style.display = 'block';
+                }
+            }
         });
     </script>
 </body>
