@@ -113,6 +113,34 @@
             font-size: 14px;
             color: #7f8c8d;
         }
+        /* 十格阵样式 */
+        .ten-frame {
+            display: flex;
+            flex-wrap: wrap;
+            width: 250px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .frame-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .frame-cell {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .filled-circle {
+            width: 30px;
+            height: 30px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
@@ -121,6 +149,25 @@
     <div class="container">
         <div class="question-area">
             <div class="number" id="targetNumber">?</div>
+            
+            <!-- 十格阵 -->
+            <div class="ten-frame" id="tenFrame">
+                <div class="frame-row">
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                </div>
+                <div class="frame-row">
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                    <div class="frame-cell"></div>
+                </div>
+            </div>
+            
             <div class="input-group">
                 <input type="number" id="num1" min="1" max="9">
                 <span>+</span>
@@ -142,10 +189,6 @@
         </div>
     </div>
 
-    <!-- 音频元素 -->
-    <audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
-    <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" preload="auto"></audio>
-
     <script>
         // 全局变量
         let currentNumber = 2; // 从2开始
@@ -163,8 +206,7 @@
         const showAllBtn = document.getElementById('showAllBtn');
         const decompositionListEl = document.getElementById('decompositionList');
         const progressEl = document.getElementById('progress');
-        const correctSound = document.getElementById('correctSound');
-        const wrongSound = document.getElementById('wrongSound');
+        const tenFrameEl = document.getElementById('tenFrame');
         
         // 初始化 - 预生成所有数字的分解组合
         document.addEventListener('DOMContentLoaded', () => {
@@ -201,6 +243,25 @@
             return decompositions;
         }
         
+        // 更新十格阵显示
+        function updateTenFrame(number) {
+            // 清除所有圆圈
+            const cells = tenFrameEl.querySelectorAll('.frame-cell');
+            cells.forEach(cell => {
+                cell.innerHTML = '';
+            });
+            
+            // 填充相应数量的圆圈
+            for (let i = 0; i < number; i++) {
+                if (i < 10) { // 确保不超过10格
+                    const cell = cells[i];
+                    const circle = document.createElement('div');
+                    circle.className = 'filled-circle';
+                    cell.appendChild(circle);
+                }
+            }
+        }
+        
         // 显示当前分解组合
         function showCurrentDecomposition() {
             const decompositions = allDecompositions[currentNumber];
@@ -225,6 +286,9 @@
             sumEl.textContent = currentNumber;
             num1El.value = currentPair.num1;
             num2El.value = '';
+            
+            // 更新十格阵
+            updateTenFrame(currentNumber);
             
             // 更新进度显示
             progressEl.textContent = `${currentNumber}的分解 (${currentDecompositionIndex + 1}/${decompositions.length})`;
@@ -252,25 +316,21 @@
             if (isNaN(num1) || isNaN(num2)) {
                 feedbackEl.textContent = '请输入两个数字！';
                 feedbackEl.className = 'feedback incorrect';
-                wrongSound.play();
                 return;
             }
             
             if (num1 <= 0 || num2 <= 0) {
                 feedbackEl.textContent = '请输入大于0的数字！';
                 feedbackEl.className = 'feedback incorrect';
-                wrongSound.play();
                 return;
             }
             
             if (num1 + num2 === currentNumber) {
                 feedbackEl.textContent = '回答正确！';
                 feedbackEl.className = 'feedback correct';
-                correctSound.play();
             } else {
                 feedbackEl.textContent = '回答错误，请再试一次！';
                 feedbackEl.className = 'feedback incorrect';
-                wrongSound.play();
             }
         }
         
