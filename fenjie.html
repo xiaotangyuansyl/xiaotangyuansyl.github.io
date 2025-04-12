@@ -12,6 +12,7 @@
             padding: 20px;
             text-align: center;
             background-color: #f5f5f5;
+            transition: all 0.3s;
         }
         h1 {
             color: #2c3e50;
@@ -20,6 +21,7 @@
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            flex-direction: row;
         }
         .question-area {
             flex: 2;
@@ -86,6 +88,12 @@
         #showAllBtn:hover {
             background-color: #8e44ad;
         }
+        #rotateBtn {
+            background-color: #f39c12;
+        }
+        #rotateBtn:hover {
+            background-color: #d35400;
+        }
         .feedback {
             font-size: 18px;
             font-weight: bold;
@@ -141,10 +149,37 @@
             background-color: #e74c3c;
             border-radius: 50%;
         }
+        
+        /* 横屏模式 */
+        body.landscape {
+            max-width: 100%;
+            padding: 10px;
+        }
+        body.landscape .container {
+            flex-direction: column;
+        }
+        body.landscape .question-area,
+        body.landscape .decomposition-area {
+            margin-left: 0;
+            margin-bottom: 20px;
+        }
+        body.landscape .ten-frame {
+            width: 200px;
+        }
+        body.landscape .frame-cell {
+            width: 30px;
+            height: 30px;
+        }
+        body.landscape .filled-circle {
+            width: 22px;
+            height: 22px;
+        }
     </style>
 </head>
 <body>
     <h1>十以内数字分解教具</h1>
+    
+    <button id="rotateBtn">横屏显示</button>
     
     <div class="container">
         <div class="question-area">
@@ -204,9 +239,11 @@
         const checkBtn = document.getElementById('checkBtn');
         const nextBtn = document.getElementById('nextBtn');
         const showAllBtn = document.getElementById('showAllBtn');
+        const rotateBtn = document.getElementById('rotateBtn');
         const decompositionListEl = document.getElementById('decompositionList');
         const progressEl = document.getElementById('progress');
         const tenFrameEl = document.getElementById('tenFrame');
+        const bodyEl = document.body;
         
         // 初始化 - 预生成所有数字的分解组合
         document.addEventListener('DOMContentLoaded', () => {
@@ -222,6 +259,7 @@
             checkBtn.addEventListener('click', checkAnswer);
             nextBtn.addEventListener('click', nextDecomposition);
             showAllBtn.addEventListener('click', showAllDecompositions);
+            rotateBtn.addEventListener('click', toggleLandscape);
             
             // 输入框自动跳转
             num1El.addEventListener('input', () => {
@@ -229,7 +267,32 @@
                     num2El.focus();
                 }
             });
+            
+            // 检测设备方向变化
+            window.addEventListener('orientationchange', handleOrientationChange);
         });
+        
+        // 横屏/竖屏切换
+        function toggleLandscape() {
+            bodyEl.classList.toggle('landscape');
+            updateRotateButtonText();
+        }
+        
+        // 更新横屏按钮文本
+        function updateRotateButtonText() {
+            rotateBtn.textContent = bodyEl.classList.contains('landscape') ? '竖屏显示' : '横屏显示';
+        }
+        
+        // 处理设备方向变化
+        function handleOrientationChange() {
+            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+            if (isLandscape) {
+                bodyEl.classList.add('landscape');
+            } else {
+                bodyEl.classList.remove('landscape');
+            }
+            updateRotateButtonText();
+        }
         
         // 生成数字的所有分解组合（不重复）
         function generateDecompositions(number) {
