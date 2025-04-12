@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>十以内数字分解教具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .question-area {
+            flex: 2;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .decomposition-area {
+            flex: 1;
+            margin-left: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .number {
+            font-size: 72px;
+            font-weight: bold;
+            color: #3498db;
+            margin: 20px 0;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        input {
+            width: 60px;
+            height: 40px;
+            font-size: 20px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #checkBtn {
+            background-color: #2ecc71;
+        }
+        #checkBtn:hover {
+            background-color: #27ae60;
+        }
+        #nextBtn {
+            background-color: #e74c3c;
+        }
+        #nextBtn:hover {
+            background-color: #c0392b;
+        }
+        #showAllBtn {
+            background-color: #9b59b6;
+        }
+        #showAllBtn:hover {
+            background-color: #8e44ad;
+        }
+        .feedback {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 27px;
+        }
+        .correct {
+            color: #2ecc71;
+        }
+        .incorrect {
+            color: #e74c3c;
+        }
+        .decomposition-list {
+            text-align: left;
+            margin-top: 15px;
+        }
+        .decomposition-item {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+        }
+        .progress {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <h1>十以内数字分解教具</h1>
+    
+    <div class="container">
+        <div class="question-area">
+            <div class="number" id="targetNumber">?</div>
+            <div class="input-group">
+                <input type="number" id="num1" min="1" max="9">
+                <span>+</span>
+                <input type="number" id="num2" min="1" max="9">
+                <span>=</span>
+                <span id="sum"></span>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <div>
+                <button id="checkBtn">验证答案</button>
+                <button id="nextBtn">下一题</button>
+            </div>
+            <div class="progress" id="progress"></div>
+        </div>
+        
+        <div class="decomposition-area">
+            <button id="showAllBtn">显示全部分解</button>
+            <div class="decomposition-list" id="decompositionList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentNumber = 2; // 从2开始
+        let currentDecompositionIndex = 0; // 当前分解组合的索引
+        let allDecompositions = {}; // 存储所有数字的分解组合
+        
+        // DOM元素
+        const targetNumberEl = document.getElementById('targetNumber');
+        const num1El = document.getElementById('num1');
+        const num2El = document.getElementById('num2');
+        const sumEl = document.getElementById('sum');
+        const feedbackEl = document.getElementById('feedback');
+        const checkBtn = document.getElementById('checkBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const showAllBtn = document.getElementById('showAllBtn');
+        const decompositionListEl = document.getElementById('decompositionList');
+        const progressEl = document.getElementById('progress');
+        
+        // 初始化 - 预生成所有数字的分解组合
+        document.addEventListener('DOMContentLoaded', () => {
+            // 生成2-9所有数字的分解组合
+            for (let num = 2; num <= 9; num++) {
+                allDecompositions[num] = generateDecompositions(num);
+            }
+            
+            // 显示第一个题目
+            showCurrentDecomposition();
+            
+            // 事件监听
+            checkBtn.addEventListener('click', checkAnswer);
+            nextBtn.addEventListener('click', nextDecomposition);
+            showAllBtn.addEventListener('click', showAllDecompositions);
+            
+            // 输入框自动跳转
+            num1El.addEventListener('input', () => {
+                if (num1El.value.length === 1) {
+                    num2El.focus();
+                }
+            });
+        });
+        
+        // 生成数字的所有分解组合（不重复）
+        function generateDecompositions(number) {
+            const decompositions = [];
+            for (let i = 1; i <= number / 2; i++) {
+                decompositions.push({
+                    num1: i,
+                    num2: number - i
+                });
+            }
+            return decompositions;
+        }
+        
+        // 显示当前分解组合
+        function showCurrentDecomposition() {
+            const decompositions = allDecompositions[currentNumber];
+            
+            // 如果没有分解组合了，转到下一个数字
+            if (currentDecompositionIndex >= decompositions.length) {
+                currentNumber++;
+                currentDecompositionIndex = 0;
+                
+                // 如果超过9，回到2
+                if (currentNumber > 9) {
+                    currentNumber = 2;
+                }
+                
+                return showCurrentDecomposition();
+            }
+            
+            const currentPair = decompositions[currentDecompositionIndex];
+            
+            // 更新UI
+            targetNumberEl.textContent = currentNumber;
+            sumEl.textContent = currentNumber;
+            num1El.value = currentPair.num1;
+            num2El.value = '';
+            
+            // 更新进度显示
+            progressEl.textContent = `${currentNumber}的分解 (${currentDecompositionIndex + 1}/${decompositions.length})`;
+            
+            // 清除反馈
+            feedbackEl.textContent = '';
+            feedbackEl.className = 'feedback';
+            decompositionListEl.innerHTML = '';
+            
+            // 聚焦到第二个输入框
+            num2El.focus();
+        }
+        
+        // 下一个分解组合
+        function nextDecomposition() {
+            currentDecompositionIndex++;
+            showCurrentDecomposition();
+        }
+        
+        // 验证答案
+        function checkAnswer() {
+            const num1 = parseInt(num1El.value);
+            const num2 = parseInt(num2El.value);
+            
+            if (isNaN(num1) || isNaN(num2)) {
+                feedbackEl.textContent = '请输入两个数字！';
+                feedbackEl.className = 'feedback incorrect';
+                return;
+            }
+            
+            if (num1 <= 0 || num2 <= 0) {
+                feedbackEl.textContent = '请输入大于0的数字！';
+                feedbackEl.className = 'feedback incorrect';
+                return;
+            }
+            
+            if (num1 + num2 === currentNumber) {
+                feedbackEl.textContent = '回答正确！';
+                feedbackEl.className = 'feedback correct';
+            } else {
+                feedbackEl.textContent = '回答错误，请再试一次！';
+                feedbackEl.className = 'feedback incorrect';
+            }
+        }
+        
+        // 显示当前数字的全部分解
+        function showAllDecompositions() {
+            decompositionListEl.innerHTML = '';
+            
+            const decompositions = allDecompositions[currentNumber];
+            
+            if (decompositions.length === 0) {
+                decompositionListEl.innerHTML = '<div class="decomposition-item">没有分解组合</div>';
+                return;
+            }
+            
+            decompositions.forEach((pair, index) => {
+                const item = document.createElement('div');
+                item.className = 'decomposition-item';
+                if (index === currentDecompositionIndex) {
+                    item.style.backgroundColor = '#e3f2fd';
+                    item.style.fontWeight = 'bold';
+                }
+                item.textContent = `${pair.num1} + ${pair.num2} = ${currentNumber}`;
+                decompositionListEl.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
