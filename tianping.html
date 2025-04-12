@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天平平衡游戏</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .scale-container {
+            position: relative;
+            height: 300px;
+            margin: 50px auto;
+        }
+        
+        .stand {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 150px;
+            background-color: #8b4513;
+            z-index: 1;
+        }
+        
+        .beam {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            width: 300px;
+            height: 10px;
+            background-color: #a0522d;
+            transform: translateX(-50%) rotate(0deg);
+            transform-origin: center;
+            transition: transform 0.5s ease;
+            z-index: 2;
+        }
+        
+        .pivot {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            background-color: #cd853f;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+        }
+        
+        .pan {
+            position: absolute;
+            width: 100px;
+            height: 30px;
+            background-color: #d2b48c;
+            border-radius: 10px;
+            z-index: 1;
+        }
+        
+        .left-pan {
+            top: 80px;
+            left: 50%;
+            transform: translateX(-150px);
+        }
+        
+        .right-pan {
+            top: 80px;
+            left: 50%;
+            transform: translateX(50px);
+        }
+        
+        .weight {
+            width: 30px;
+            height: 30px;
+            background-color: #4682b4;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .pan-content {
+            margin-top: 35px;
+            min-height: 40px;
+        }
+        
+        .controls {
+            margin-top: 30px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 27px;
+            color: #27ae60;
+        }
+        
+        .new-game-btn {
+            background-color: #2ecc71;
+        }
+        
+        .new-game-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .weight-count {
+            font-size: 18px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .target-hint {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>天平平衡游戏</h1>
+        
+        <div class="scale-container">
+            <div class="stand"></div>
+            <div class="beam" id="beam"></div>
+            <div class="pivot"></div>
+            
+            <div class="pan left-pan">
+                <div class="weight-count">左侧秤砣: <span id="left-count">0</span></div>
+                <div class="pan-content" id="left-pan-content"></div>
+            </div>
+            
+            <div class="pan right-pan">
+                <div class="weight-count">右侧秤砣: <span id="right-count">0</span></div>
+                <div class="pan-content" id="right-pan-content"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="add-btn">增加秤砣</button>
+            <button id="remove-btn">减少秤砣</button>
+            <button class="new-game-btn" id="new-game-btn">新游戏</button>
+        </div>
+        
+        <div class="message" id="message"></div>
+        <div class="target-hint" id="target-hint"></div>
+    </div>
+
+    <script>
+        // 游戏变量
+        let leftWeights = 0;
+        let rightWeights = 0;
+        let targetWeights = 0;
+        
+        // DOM元素
+        const beam = document.getElementById('beam');
+        const leftPanContent = document.getElementById('left-pan-content');
+        const rightPanContent = document.getElementById('right-pan-content');
+        const leftCount = document.getElementById('left-count');
+        const rightCount = document.getElementById('right-count');
+        const addBtn = document.getElementById('add-btn');
+        const removeBtn = document.getElementById('remove-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const message = document.getElementById('message');
+        const targetHint = document.getElementById('target-hint');
+        
+        // 初始化游戏
+        function initGame() {
+            // 随机生成左侧秤砣数量 (1-10)
+            leftWeights = Math.floor(Math.random() * 10) + 1;
+            // 随机生成右侧初始秤砣数量 (1-10)
+            rightWeights = Math.floor(Math.random() * 10) + 1;
+            // 目标就是左侧秤砣数量
+            targetWeights = leftWeights;
+            
+            updateDisplay();
+            updateBeam();
+            message.textContent = '';
+            targetHint.textContent = `目标: 让右侧秤砣数量等于左侧 (${targetWeights})`;
+        }
+        
+        // 更新显示
+        function updateDisplay() {
+            // 更新左侧秤砣
+            leftPanContent.innerHTML = '';
+            for (let i = 0; i < leftWeights; i++) {
+                leftPanContent.innerHTML += '<div class="weight"></div>';
+            }
+            leftCount.textContent = leftWeights;
+            
+            // 更新右侧秤砣
+            rightPanContent.innerHTML = '';
+            for (let i = 0; i < rightWeights; i++) {
+                rightPanContent.innerHTML += '<div class="weight"></div>';
+            }
+            rightCount.textContent = rightWeights;
+        }
+        
+        // 更新天平倾斜
+        function updateBeam() {
+            if (leftWeights > rightWeights) {
+                beam.style.transform = 'translateX(-50%) rotate(-5deg)';
+            } else if (leftWeights < rightWeights) {
+                beam.style.transform = 'translateX(-50%) rotate(5deg)';
+            } else {
+                beam.style.transform = 'translateX(-50%) rotate(0deg)';
+            }
+        }
+        
+        // 检查是否平衡
+        function checkBalance() {
+            if (rightWeights === targetWeights) {
+                message.textContent = '恭喜！天平平衡了！';
+                message.style.color = '#27ae60';
+            } else if (rightWeights < targetWeights) {
+                message.textContent = '继续增加秤砣！';
+                message.style.color = '#e67e22';
+            } else {
+                message.textContent = '减少一些秤砣！';
+                message.style.color = '#e67e22';
+            }
+        }
+        
+        // 事件监听
+        addBtn.addEventListener('click', function() {
+            rightWeights++;
+            updateDisplay();
+            updateBeam();
+            checkBalance();
+        });
+        
+        removeBtn.addEventListener('click', function() {
+            if (rightWeights > 0) {
+                rightWeights--;
+                updateDisplay();
+                updateBeam();
+                checkBalance();
+            }
+        });
+        
+        newGameBtn.addEventListener('click', initGame);
+        
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
