@@ -142,6 +142,50 @@
             font-size: 14px;
             color: #666;
         }
+        .stats-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .stats-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .session-info {
+            margin-bottom: 10px;
+        }
+        .history-chart {
+            display: flex;
+            height: 100px;
+            align-items: flex-end;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .bar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+        }
+        .bar {
+            width: 30px;
+            background-color: #4CAF50;
+            transition: height 0.5s;
+        }
+        .bar-label {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        .reset-btn {
+            background-color: #f44336;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +226,14 @@
         </div>
     </div>
     
+    <div class="stats-container">
+        <div class="stats-title">学习统计</div>
+        <div class="session-info" id="sessionInfo">第0次练习 | 正确率: 0%</div>
+        <div id="historyStats"></div>
+        <div class="history-chart" id="historyChart"></div>
+        <button class="reset-btn" id="resetBtn">重置学习记录</button>
+    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const generateBtn = document.getElementById('generateBtn');
@@ -190,6 +242,20 @@
             const numberSelector = document.getElementById('numberSelector');
             const feedback = document.getElementById('feedback');
             const flowers = document.querySelectorAll('.flower');
+            const sessionInfo = document.getElementById('sessionInfo');
+            const historyStats = document.getElementById('historyStats');
+            const historyChart = document.getElementById('historyChart');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // 学习记录数据
+            let learningData = JSON.parse(localStorage.getItem('tenFrameLearningData')) || {
+                sessions: [],
+                currentSession: {
+                    attempts: 0,
+                    correct: 0,
+                    startTime: new Date().toISOString()
+                }
+            };
             
             let currentNumber = 0;
             let score = 0;
@@ -197,9 +263,28 @@
             
             // 初始化游戏
             initGame();
+            updateStats();
             
             // 点击按钮开始新游戏
             generateBtn.addEventListener('click', initGame);
+            
+            // 重置学习记录
+            resetBtn.addEventListener('click', function() {
+                if(confirm('确定要重置所有学习记录吗？')) {
+                    learningData = {
+                        sessions: [],
+                        currentSession: {
+                            attempts: 0,
+                            correct: 0,
+                            startTime: new Date().toISOString()
+                        }
+                    };
+                    saveData();
+                    updateStats();
+                    score = 0;
+                    updateFlowers();
+                }
+            });
             
             function initGame() {
                 // 重置反馈
@@ -244,7 +329,7 @@
                     currentNumber = Math.floor(Math.random() * 20) + 1;
                 }
                 
-                // 填充十格阵 - 关键修正点
+                // 填充十格阵
                 for (let i = 0; i < currentNumber && i < cells.length; i++) {
                     const dot = document.createElement('div');
                     // 每个格子的颜色根据其位置决定
@@ -288,9 +373,14 @@
             }
             
             function checkAnswer(selectedNumber) {
+                // 记录尝试次数
+                learningData.currentSession.attempts++;
+                
                 if (selectedNumber === currentNumber) {
                     feedback.textContent = '答对了！太棒了！';
                     feedback.className = 'feedback correct';
+                    // 记录正确次数
+                    learningData.currentSession.correct++;
                     addFlower();
                     // 延迟1秒后自动生成新题目
                     setTimeout(initGame, 1000);
@@ -298,12 +388,19 @@
                     feedback.textContent = '再试试看！';
                     feedback.className = 'feedback incorrect';
                 }
+                
+                // 保存数据并更新统计
+                saveData();
+                updateStats();
             }
             
             function addFlower() {
                 score++;
                 if (score > 5) score = 5; // 最多5朵花
-                
+                updateFlowers();
+            }
+            
+            function updateFlowers() {
                 // 隐藏所有花
                 flowers.forEach(flower => {
                     flower.style.display = 'none';
@@ -314,6 +411,96 @@
                     flowers[i].style.display = 'block';
                 }
             }
+            
+            function saveData() {
+                localStorage.setItem('tenFrameLearningData', JSON.stringify(learningData));
+            }
+            
+            function updateStats() {
+                const totalSessions = learningData.sessions.length + 1;
+                const currentCorrectRate = learningData.currentSession.attempts > 0 
+                    ? Math.round((learningData.currentSession.correct / learningData.currentSession.attempts) * 100)
+                    : 0;
+                
+                // 更新当前会话信息
+                sessionInfo.textContent = `第${totalSessions}次练习 | 正确率: ${currentCorrectRate}%`;
+                
+                // 准备历史数据
+                let historyText = '';
+                let allSessions = [...learningData.sessions];
+                if (learningData.currentSession.attempts > 0) {
+                    allSessions.push({
+                        ...learningData.currentSession,
+                        endTime: new Date().toISOString()
+                    });
+                }
+                
+                if (allSessions.length > 0) {
+                    historyText = '<div>历史成绩:</div>';
+                    allSessions.forEach((session, index) => {
+                        const rate = session.attempts > 0 
+                            ? Math.round((session.correct / session.attempts) * 100)
+                            : 0;
+                        historyText += `<div>第${index + 1}次: ${session.correct}/${session.attempts} (${rate}%)</div>`;
+                    });
+                }
+                
+                historyStats.innerHTML = historyText;
+                
+                // 更新图表
+                updateChart(allSessions);
+            }
+            
+            function updateChart(sessions) {
+                historyChart.innerHTML = '';
+                
+                if (sessions.length === 0) return;
+                
+                // 找出最高正确率用于缩放
+                const maxRate = Math.max(...sessions.map(s => 
+                    s.attempts > 0 ? Math.round((s.correct / s.attempts) * 100) : 0
+                ));
+                const scale = maxRate > 0 ? 100 / maxRate : 1;
+                
+                sessions.forEach((session, index) => {
+                    const rate = session.attempts > 0 
+                        ? Math.round((session.correct / session.attempts) * 100)
+                        : 0;
+                    const barHeight = rate * scale;
+                    
+                    const barContainer = document.createElement('div');
+                    barContainer.className = 'bar-container';
+                    
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.height = `${barHeight}px`;
+                    bar.title = `第${index + 1}次: ${rate}%`;
+                    
+                    const barLabel = document.createElement('div');
+                    barLabel.className = 'bar-label';
+                    barLabel.textContent = index + 1;
+                    
+                    barContainer.appendChild(bar);
+                    barContainer.appendChild(barLabel);
+                    historyChart.appendChild(barContainer);
+                });
+            }
+            
+            // 窗口关闭前保存当前会话
+            window.addEventListener('beforeunload', function() {
+                if (learningData.currentSession.attempts > 0) {
+                    learningData.sessions.push({
+                        ...learningData.currentSession,
+                        endTime: new Date().toISOString()
+                    });
+                    learningData.currentSession = {
+                        attempts: 0,
+                        correct: 0,
+                        startTime: new Date().toISOString()
+                    };
+                    saveData();
+                }
+            });
         });
     </script>
 </body>
