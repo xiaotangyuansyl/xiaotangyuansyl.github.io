@@ -38,9 +38,13 @@
             justify-content: center;
             font-size: 40px;
             font-weight: bold;
-            border: 3px dashed #ccc;
+            border: 3px solid #ccc;
             border-radius: 10px;
             position: relative;
+        }
+        .number-box.active {
+            border-color: #06d6a0;
+            background-color: rgba(6, 214, 160, 0.1);
         }
         .number-box::before {
             position: absolute;
@@ -77,21 +81,15 @@
             border: none;
             background-color: #ffd166;
             color: white;
-            cursor: grab;
+            cursor: pointer;
             transition: all 0.3s;
-            user-select: none;
         }
         .number-btn:hover {
             transform: scale(1.1);
             background-color: #ff9f1c;
         }
-        .number-btn.dragging {
-            opacity: 0.5;
-            cursor: grabbing;
-        }
-        .number-box.highlight {
-            border-color: #06d6a0;
-            background-color: rgba(6, 214, 160, 0.1);
+        .number-btn.selected {
+            background-color: #06d6a0;
         }
         .feedback {
             font-size: 24px;
@@ -122,28 +120,17 @@
             color: #666;
             font-size: 18px;
         }
-        .dropped-number {
-            width: 70px;
-            height: 70px;
-            font-size: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: rgba(6, 214, 160, 0.2);
-            border-radius: 8px;
-            color: #06d6a0;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>数字前后识别游戏</h1>
-        <p class="instructions">把数字拖到正确的前后数字框中吧！</p>
+        <p class="instructions">点击下方数字填写前后数字框</p>
         
         <div class="number-display">
-            <div class="number-box prev-box" id="prevBox" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+            <div class="number-box prev-box" id="prevBox"></div>
             <div class="number-box current-box" id="currentBox">?</div>
-            <div class="number-box next-box" id="nextBox" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+            <div class="number-box next-box" id="nextBox"></div>
         </div>
         
         <div class="feedback" id="feedback"></div>
@@ -167,7 +154,7 @@
             let currentNumber = 0;
             let correctPrev = 0;
             let correctNext = 0;
-            let droppedNumbers = { prev: null, next: null };
+            let currentActiveBox = null;
             
             // 创建1-10的数字按钮
             for (let i = 1; i <= 10; i++) {
@@ -175,8 +162,7 @@
                 btn.className = 'number-btn';
                 btn.textContent = i;
                 btn.dataset.number = i;
-                btn.draggable = true;
-                btn.addEventListener('dragstart', drag);
+                btn.addEventListener('click', handleNumberClick);
                 numberButtonsEl.appendChild(btn);
             }
             
@@ -189,8 +175,10 @@
                 feedbackEl.textContent = '';
                 feedbackEl.className = 'feedback';
                 
-                // 清除之前拖放的数字
-                clearDroppedNumbers();
+                // 重置所有按钮状态
+                document.querySelectorAll('.number-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
             });
             
             // 生成新数字
@@ -198,12 +186,28 @@
                 currentNumber = Math.floor(Math.random() * 10) + 1;
                 currentBoxEl.textContent = currentNumber;
                 
+                // 清空前后的数字框
+                prevBoxEl.textContent = '';
+                nextBoxEl.textContent = '';
+                
                 // 计算正确答案
                 correctPrev = currentNumber > 1 ? currentNumber - 1 : 0;
                 correctNext = currentNumber < 10 ? currentNumber + 1 : 0;
                 
-                // 重置拖放区域
-                clearDroppedNumbers();
+                // 设置初始活动框
+                if (correctPrev > 0) {
+                    currentActiveBox = prevBoxEl;
+                    prevBoxEl.classList.add('active');
+                    nextBoxEl.classList.remove('active');
+                } else if (correctNext > 0) {
+                    currentActiveBox = nextBoxEl;
+                    nextBoxEl.classList.add('active');
+                    prevBoxEl.classList.remove('active');
+                } else {
+                    currentActiveBox = null;
+                    prevBoxEl.classList.remove('active');
+                    nextBoxEl.classList.remove('active');
+                }
                 
                 // 如果没有前后数字（1和10的特殊情况）
                 if (correctPrev === 0 && correctNext === 0) {
@@ -212,98 +216,48 @@
                 }
             }
             
-            // 清除已拖放的数字
-            function clearDroppedNumbers() {
-                if (droppedNumbers.prev) {
-                    prevBoxEl.removeChild(droppedNumbers.prev);
-                    droppedNumbers.prev = null;
-                }
-                if (droppedNumbers.next) {
-                    nextBoxEl.removeChild(droppedNumbers.next);
-                    droppedNumbers.next = null;
-                }
+            // 数字按钮点击事件
+            function handleNumberClick(e) {
+                const clickedNumber = parseInt(e.target.dataset.number);
                 
-                // 重置高亮
-                prevBoxEl.classList.remove('highlight');
-                nextBoxEl.classList.remove('highlight');
-            }
-            
-            // 拖动开始
-            function drag(e) {
-                e.dataTransfer.setData('text/plain', e.target.dataset.number);
-                e.target.classList.add('dragging');
+                // 如果没有活动框，则忽略点击
+                if (!currentActiveBox) return;
                 
-                // 高亮可放置的区域
-                if (correctPrev > 0) prevBoxEl.classList.add('highlight');
-                if (correctNext > 0) nextBoxEl.classList.add('highlight');
-            }
-            
-            // 允许放置
-            function allowDrop(e) {
-                e.preventDefault();
-            }
-            
-            // 放置数字
-            function drop(e) {
-                e.preventDefault();
-                const data = e.dataTransfer.getData('text/plain');
-                const number = parseInt(data);
-                const targetBox = e.currentTarget;
+                // 如果点击的是当前数字本身，则忽略
+                if (clickedNumber === currentNumber) return;
                 
-                // 移除拖动样式
-                document.querySelectorAll('.number-btn').forEach(btn => {
-                    btn.classList.remove('dragging');
-                });
+                // 将数字填入当前活动框
+                currentActiveBox.textContent = clickedNumber;
                 
-                // 重置高亮
-                prevBoxEl.classList.remove('highlight');
-                nextBoxEl.classList.remove('highlight');
+                // 标记按钮为已选择
+                e.target.classList.add('selected');
                 
-                // 检查是否已经放置过数字
-                if (targetBox.id === 'prevBox' && droppedNumbers.prev) {
-                    targetBox.removeChild(droppedNumbers.prev);
-                } else if (targetBox.id === 'nextBox' && droppedNumbers.next) {
-                    targetBox.removeChild(droppedNumbers.next);
-                }
-                
-                // 创建放置的数字元素
-                const droppedNumber = document.createElement('div');
-                droppedNumber.className = 'dropped-number';
-                droppedNumber.textContent = number;
-                targetBox.appendChild(droppedNumber);
-                
-                // 记录放置的数字
-                if (targetBox.id === 'prevBox') {
-                    droppedNumbers.prev = droppedNumber;
+                // 检查是否需要切换到下一个框
+                if (currentActiveBox === prevBoxEl && correctNext > 0) {
+                    // 切换到后一个数字框
+                    prevBoxEl.classList.remove('active');
+                    nextBoxEl.classList.add('active');
+                    currentActiveBox = nextBoxEl;
                 } else {
-                    droppedNumbers.next = droppedNumber;
+                    // 检查答案
+                    checkAnswer();
                 }
-                
-                // 检查答案
-                checkAnswer();
             }
             
             // 检查答案
             function checkAnswer() {
-                // 检查是否已经放置了两个数字（如果有两个正确答案的话）
-                const hasTwoAnswers = correctPrev > 0 && correctNext > 0;
-                const hasOneAnswer = correctPrev > 0 || correctNext > 0;
-                
-                if (hasTwoAnswers && (!droppedNumbers.prev || !droppedNumbers.next)) {
-                    return; // 等待第二个数字被放置
-                }
+                const prevAnswer = prevBoxEl.textContent ? parseInt(prevBoxEl.textContent) : 0;
+                const nextAnswer = nextBoxEl.textContent ? parseInt(nextBoxEl.textContent) : 0;
                 
                 let isPrevCorrect = true;
                 let isNextCorrect = true;
                 
                 if (correctPrev > 0) {
-                    isPrevCorrect = droppedNumbers.prev && 
-                                    parseInt(droppedNumbers.prev.textContent) === correctPrev;
+                    isPrevCorrect = prevAnswer === correctPrev;
                 }
                 
                 if (correctNext > 0) {
-                    isNextCorrect = droppedNumbers.next && 
-                                    parseInt(droppedNumbers.next.textContent) === correctNext;
+                    isNextCorrect = nextAnswer === correctNext;
                 }
                 
                 const isCorrect = isPrevCorrect && isNextCorrect;
@@ -311,6 +265,11 @@
                 if (isCorrect) {
                     feedbackEl.textContent = '太棒了！答对了！';
                     feedbackEl.className = 'feedback correct';
+                    
+                    // 移除活动状态
+                    prevBoxEl.classList.remove('active');
+                    nextBoxEl.classList.remove('active');
+                    currentActiveBox = null;
                 } else {
                     let correctAnswer = '';
                     if (correctPrev > 0 && correctNext > 0) {
