@@ -165,7 +165,6 @@
             background-color: #3498db;
             color: white;
         }
-        /* 新增日期输入样式 */
         .date-input-group {
             display: flex;
             gap: 5px;
@@ -179,6 +178,29 @@
             width: 20px;
             text-align: center;
             line-height: 40px;
+        }
+        /* 新增的抚养人情况样式 */
+        .supporters-option {
+            margin-top: 10px;
+        }
+        .supporters-count {
+            display: none;
+            margin-top: 5px;
+        }
+        .supporters-count input {
+            width: 60px;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        /* 新增的访问统计样式 */
+        .visit-counter {
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -223,7 +245,7 @@
                 <span>年</span>
                 <input type="number" id="victim-month" min="1" max="12" placeholder="月">
                 <span>月</span>
-                <input type="number" id="victim-day" min="1" max="31" placeholder="日">
+                <input type="number" id="victim-day" min="1, max=31" placeholder="日">
                 <span>日</span>
             </div>
         </div>
@@ -267,7 +289,7 @@
         <input type="number" id="funeral" placeholder="将按在岗职工平均工资6个月自动计算" readonly>
         
         <label for="mental-damages">精神损害抚慰金(元):</label>
-        <input type="number" id="mental-damages" placeholder="请输入精神损害抚慰金，通常5-10万" value="80000">
+        <input type="number" id="mental-damages" placeholder="请输入精神损害抚慰金,通常5-10万" value="80000">
         
         <button onclick="calculate()">计算赔偿金额</button>
     </div>
@@ -310,14 +332,20 @@
     
     <div class="note">
         <h3>说明:</h3>
-        <p>1. 本计算工具依据《中华人民共和国民法典》《道路交通安全法》及相关司法解释制作，专用于河北省内交通事故死亡赔偿计算。</p>
-        <p>2. 死亡赔偿金按照河北省上一年度城镇居民人均可支配收入标准计算20年（60岁以上每增加1岁减少1年，75岁以上按5年计算）。</p>
-        <p>3. 被扶养人生活费按照河北省上一年度城镇居民人均消费支出标准计算，未成年人计算至18周岁。</p>
+        <p>1. 本计算工具依据《中华人民共和国民法典》《道路交通安全法》及相关司法解释制作,专用于河北省内交通事故死亡赔偿计算。</p>
+        <p>2. 死亡赔偿金按照河北省上一年度城镇居民人均可支配收入标准计算20年(60岁以上每增加1岁减少1年,75岁以上按5年计算)。</p>
+        <p>3. 被扶养人生活费按照河北省上一年度城镇居民人均消费支出标准计算,未成年人计算至18周岁。</p>
         <p>4. 丧葬费按照河北省在岗职工平均工资的6个月自动计算。</p>
-        <p>5. 精神损害抚慰金通常为5-10万元，请根据实际情况输入。</p>
-        <p>6. 机动车交强险死亡伤残赔偿限额为18万元，优先赔付且不按责任比例分摊。</p>
+        <p>5. 精神损害抚慰金通常为5-10万元,请根据实际情况输入。</p>
+        <p>6. 机动车交强险死亡伤残赔偿限额为18万元,优先赔付且不按责任比例分摊。</p>
         <p>7. 实际赔偿金额可能因个案情况、证据材料、法院裁量等因素有所不同。</p>
-        <p>8. 当前预设数据为河北省最新标准，可手动修改并恢复默认值。</p>
+        <p>8. 当前预设数据为河北省最新标准,可手动修改并恢复默认值。</p>
+        <p>9. 新增:被扶养人如有其他抚养人,请选择"有"并填写数量,系统会自动分摊生活费。</p>
+    </div>
+
+    <!-- 新增的访问统计 -->
+    <div class="visit-counter">
+        页面访问次数: <span id="visitCount">0</span> 次
     </div>
 
     <script>
@@ -336,14 +364,25 @@
                 document.getElementById('insurance-result').classList.toggle('hidden', !isMotor);
             });
             
-            // 监听平均工资变化，自动计算丧葬费
+            // 监听平均工资变化,自动计算丧葬费
             document.getElementById('salary').addEventListener('input', function() {
                 updateFuneralExpense();
             });
             
             // 初始计算丧葬费
             updateFuneralExpense();
+            
+            // 访问统计
+            updateVisitCount();
         });
+        
+        // 更新访问次数
+        function updateVisitCount() {
+            let count = localStorage.getItem('visitCount') || 0;
+            count = parseInt(count) + 1;
+            localStorage.setItem('visitCount', count);
+            document.getElementById('visitCount').textContent = count;
+        }
         
         // 切换年龄输入方式
         function switchTab(tab) {
@@ -353,7 +392,7 @@
             
             if (tab === 'age') {
                 document.querySelector('.tab:nth-child(1)').classList.add('active');
-                document.getElementById('age-tab').classList.remove('hidden');
+                document.getElementById('age-ttab').classList.remove('hidden');
             } else {
                 document.querySelector('.tab:nth-child(2)').classList.add('active');
                 document.getElementById('birthday-tab').classList.remove('hidden');
@@ -368,7 +407,7 @@
             document.getElementById('victim-age').value = 30;
             document.getElementById('mental-damages').value = 80000;
             
-            // 设置默认出生日期（当前日期30年前）
+            // 设置默认出生日期(当前日期30年前)
             const today = new Date();
             document.getElementById('victim-year').value = today.getFullYear() - 30;
             document.getElementById('victim-month').value = today.getMonth() + 1;
@@ -429,10 +468,33 @@
                     <option value="other">其他</option>
                 </select>
                 
+                <!-- 新增的抚养人情况选项 -->
+                <div class="supporters-option">
+                    <label>有无其他抚养人:</label>
+                    <div>
+                        <input type="radio" id="has-supporters-no-${dependentCount}" name="has-supporters-${dependentCount}" value="no" checked>
+                        <label for="has-supporters-no-${dependentCount}" style="display:inline">无</label>
+                        <input type="radio" id="has-supporters-yes-${dependentCount}" name="has-supporters-${dependentCount}" value="yes">
+                        <label for="has-supporters-yes-${dependentCount}" style="display:inline">有</label>
+                    </div>
+                    <div class="supporters-count" id="supporters-count-${dependentCount}">
+                        <label>其他抚养人数量:</label>
+                        <input type="number" id="supporters-count-input-${dependentCount}" min="1" max="10" value="1">
+                    </div>
+                </div>
+                
                 <button class="remove-dependent" onclick="removeDependent('dependent-${dependentCount}')">删除</button>
             `;
             
             container.appendChild(div);
+            
+            // 添加其他抚养人数量显示/隐藏逻辑
+            document.getElementById(`has-supporters-yes-${dependentCount}`).addEventListener('change', function() {
+                document.getElementById(`supporters-count-${dependentCount}`).style.display = this.checked ? 'block' : 'none';
+            });
+            document.getElementById(`has-supporters-no-${dependentCount}`).addEventListener('change', function() {
+                document.getElementById(`supporters-count-${dependentCount}`).style.display = 'none';
+            });
         }
         
         // 切换被扶养人年龄输入方式
@@ -473,7 +535,7 @@
             
             let age = currentYear - year;
             
-            // 如果当前月份小于出生月份，或者月份相同但日期小于出生日期，年龄减1
+            // 如果当前月份小于出生月份,或者月份相同但日期小于出生日期,年龄减1
             if (currentMonth < month || (currentMonth === month && currentDay < day)) {
                 age--;
             }
@@ -516,7 +578,7 @@
                 const oppositeType = document.getElementById('opposite-type').value;
                 const responsibility = document.getElementById('responsibility').value;
                 
-                // 计算死亡赔偿金（20年，60岁以上每增加1岁减少1年，75岁以上按5年计算）
+                // 计算死亡赔偿金(20年,60岁以上每增加1岁减少1年,75岁以上按5年计算)
                 let compensationYears = 20;
                 if (victimAge > 60) {
                     compensationYears = Math.max(5, 20 - (victimAge - 60));
@@ -558,17 +620,25 @@
                     // 抚养年限不超过死亡赔偿金计算年限
                     supportYears = Math.min(supportYears, compensationYears);
                     
-                    // 计算该被扶养人生活费
-                    dependentsLiving += expenditure * supportYears;
+                    // 计算该被扶养人生活费(考虑其他抚养人情况)
+                    let hasOtherSupporters = document.getElementById(`has-supporters-yes-${i}`).checked;
+                    let supportersCount = 1; // 默认只有死者一个抚养人
+                    
+                    if (hasOtherSupporters) {
+                        supportersCount += parseInt(document.getElementById(`supporters-count-input-${i}`).value) || 0;
+                    }
+                    
+                    // 生活费 = (人均消费支出 × 抚养年限) / 抚养人数量
+                    dependentsLiving += (expenditure * supportYears) / supportersCount;
                 }
                 
-                // 多个被扶养人时，总额不超过人均消费支出 × 20年
+                // 多个被扶养人时,总额不超过人均消费支出 × 20年
                 dependentsLiving = Math.min(dependentsLiving, expenditure * 20);
                 
                 // 计算总额
                 const totalCompensation = deathCompensation + funeral + dependentsLiving + mentalDamages;
                 
-                // 交强险赔偿（如对方是机动车）
+                // 交强险赔偿(如对方是机动车)
                 const isMotor = oppositeType === 'motor';
                 const insuranceCompensation = isMotor ? 180000 : 0;
                 
@@ -576,7 +646,7 @@
                 const responsibilityPercent = getResponsibilityPercent(responsibility);
                 const responsibilityText = (responsibilityPercent * 100) + '%';
                 
-                // 实际应赔偿金额（交强险优先赔付后，剩余部分按责任比例计算）
+                // 实际应赔偿金额(交强险优先赔付后,剩余部分按责任比例计算)
                 const compensationAfterInsurance = Math.max(0, totalCompensation - insuranceCompensation);
                 const actualCompensation = insuranceCompensation + (compensationAfterInsurance * responsibilityPercent);
                 
@@ -593,7 +663,7 @@
                 document.getElementById('result').style.display = 'block';
             } catch (e) {
                 console.error('计算错误:', e);
-                alert('计算过程中发生错误，请检查输入数据');
+                alert('计算过程中发生错误,请检查输入数据');
             }
         }
     </script>
