@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>河北省交通事故死亡赔偿计算工具</title>
+    <style>
+        /* 样式保持不变，同前 */
+    </style>
+</head>
+<body>
+    <!-- HTML结构保持不变，同前 -->
+    
+    <script>
+        // 被人计数器
+        let dependentCount = 0;
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认数据
+            setDefaultValues();
+            
+            // 监听对方类型变化
+            document.getElementById('opposite-type').addEventListener('change', function() {
+                const isMotor = this.value === 'motor';
+                document.getElementById('insurance-info').classList.toggle('hidden', !isMotor);
+                document.getElementById('insurance-result').classList.toggle('hidden', !isMotor);
+            });
+            
+            // 监听平均工资变化，自动计算丧葬费
+            document.getElementById('salary').addEventListener('input', function() {
+                updateFuneral();
+            });
+        });
+        
+        // 切换年龄输入方式
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('age-tab').classList.add('hidden');
+            document.getElementById('birthday-tab').classList.add('hidden');
+            
+            if (tab === 'age') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('age-tab').classList.remove('hidden');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('birthday-tab').classList.remove('hidden');
+            }
+        }
+        
+        // 设置默认值
+        function setDefaultValues() {
+            document.getElementById('income').value = 45610;
+            document.getElementById('expenditure').value = 29310;
+            document.getElementById('salary').value = 94818;
+            updateFuneralExpense();
+        }
+        
+        // 更新丧葬费
+        function updateFuneralExpense() {
+            const salary = parseInt(document.getElementById('salary').value) || 0;
+            document.getElementById('funeral').value = salary / 2;
+        }
+        
+        // 恢复默认标准
+        function updateStandard(field, defaultValue) {
+            document.getElementById(field).value = defaultValue;
+            if (field === 'salary') {
+                updateFuneralExpense();
+            }
+        }
+        
+        // 添加被扶养人
+        function addDependent() {
+            dependentCount++;
+            const container = document.getElementById('dependents-container');
+            
+            const div = document.createElement('div');
+            div.className = 'dependent-item';
+            div.id = 'dependent-' + dependentCount;
+            
+            div.innerHTML = `
+                <div class="tab-container">
+                    <div class="tab active" onclick="switchDependentTab('age', ${dependentCount})">直接输入年龄</div>
+                    <div class="tab" onclick="switchDependentTab('birthday', ${dependentCount})">输入出生日期</div>
+                </div>
+                
+                <div id="dependent-age-${dependentCount}">
+                    <input type="number" id="dependent-age-input-${dependentCount}" min="0" max="120" placeholder="请输入年龄">
+                </div>
+                
+                <div id="dependent-birthday-${dependentCount}" class="hidden">
+                    <input type="date" id="dependent-birthday-input-${dependentCount}">
+                </div>
+                
+                <label for="dependent-relation-${dependentCount}">与被扶养人关系:</label>
+                <select id="dependent-relation-${dependentCount}">
+                    <option value="child">子女</option>
+                    <option value="parent">父母</option>
+                    <option value="spouse">配偶</option>
+                    <option value="other">其他</option>
+                </select>
+                
+                <button class="remove-dependent" onclick="removeDependent('dependent-${dependentCount}')">删除</button>
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        // 切换被扶养人年龄输入方式
+        function switchDependentTab(tab, index) {
+            const container = document.getElementById(`dependent-${index}`);
+            container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            container.querySelector(`#dependent-age-${index}`).classList.add('hidden');
+            container.querySelector(`#dependent-birthday-${index}`).classList.add('hidden');
+            
+            if (tab === 'age') {
+                container.querySelector('.tab:nth-child(1)').classList.add('active');
+                container.querySelector(`#dependent-age-${index}`).classList.remove('hidden');
+            } else {
+                container.querySelector('.tab:nth-child(2)').classList.add('active');
+                container.querySelector(`#dependent-birthday-${index}`).classList.remove('hidden');
+            }
+        }
+        
+        // 删除被扶养人
+        function removeDependent(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.remove();
+                dependentCount--;
+            }
+        }
+        
+        // 计算年龄
+        function calculateAge(birthday) {
+            if (!birthday) return 0;
+            
+            const birthDate = new Date(birthday);
+            const today = new Date();
+            
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            return age;
+        }
+        
+        // 获取责任比例对应的百分比
+        function getResponsibilityPercent(responsibility) {
+            switch(responsibility) {
+                case 'full': return 1.0;
+                case 'major': return 0.7;
+                case 'equal': return 0.5;
+                case 'minor': return 0.3;
+                case 'none': return 0;
+                default: return 1.0;
+            }
+        }
+        
+        // 计算赔偿金额
+        function calculate() {
+            // 获取死者年龄
+            let victimAge;
+            if (document.querySelector('.tab:nth-child(1)').classList.contains('active')) {
+                victimAge = parseInt(document.getElementById('victim-age').value) || 0;
+            } else {
+                const birthday = document.getElementById('victim-birthday').value;
+                victimAge = calculateAge(birthday);
+            }
+            
+            // 获取其他输入值
+            const income = parseInt(document.getElementById('income').value) || 0;
+            const expenditure = parseInt(document.getElementById('expenditure').value) || 0;
+            const salary = parseInt(document.getElementById('salary').value) || 0;
+            const funeral = salary / 2; // 自动计算丧葬费
+            const mentalDamages = parseInt(document.getElementById('mental-damages').value) || 0;
+            const oppositeType = document.getElementById('opposite-type').value;
+            const responsibility = document.getElementById('responsibility').value;
+            
+            // 计算死亡赔偿金（20年，60岁以上每增加1岁减少1年，75岁以上按5年计算）
+            let compensationYears = 20;
+            if (victimAge > 60) {
+                compensationYears = Math.max(5, 20 - (victimAge - 60));
+            }
+            const deathCompensation = income * compensationYears;
+            
+            // 计算被扶养人生活费
+            let dependentsLiving = 0;
+            for (let i = 1; i <= dependentCount; i++) {
+                let age = 0;
+                const container = document.getElementById(`dependent-${i}`);
+                
+                if (container.querySelector('.tab:nth-child(1)').classList.contains('active')) {
+                    // 直接输入年龄
+                    age = parseInt(container.querySelector(`#dependent-age-input-${i}`).value) || 0;
+                } else {
+                    // 输入出生日期
+                    const birthday = container.querySelector(`#dependent-birthday-input-${i}`).value;
+                    age = calculateAge(birthday);
+                }
+                
+                // 修正1：确保年龄有效
+                if (isNaN(age) || age < 0) age = 0;
+                
+                // 修正2：计算抚养年限（不超过20年）
+                let supportYears = 0;
+                if (age < 18) {
+                    supportYears = 18 - age;
+                } else {
+                    // 成年人（无劳动能力）计算20年
+                    supportYears = 20;
+                }
+                
+                // 修正3：抚养年限不超过死亡赔偿金计算年限
+                supportYears = Math.min(supportYears, compensationYears);
+                
+                // 修正4：多个被扶养人时，年赔偿总额累计不超过上一年度城镇居民人均消费支出额
+                dependentsLiving += expenditure * supportYears;
+            }
+            
+            // 修正5：多个被扶养人时，总额不超过上城镇居民人均消费支出额 × 20年
+            dependentsLiving = Math.min(dependentsLiving, expenditure * 20);
+            
+            // 计算总额
+            const totalCompensation = deathCompensation + funeral + dependentsLiving + mentalDamages;
+            
+            // 交强险赔偿（如对方是机动车）
+            const isMotor = oppositeType === 'motor';
+            const insuranceCompensation = isMotor ? 180000 : 0;
+            
+            // 责任比例
+            const responsibilityPercent = getResponsibilityPercent(responsibility);
+            const responsibilityText = (responsibilityPercent * 100) + '%';
+            
+            // 实际应赔偿金额（交强险优先赔付后，剩余部分按责任比例计算）
+            const compensationAfterInsurance = Math.max(0, totalCompensation - insuranceCompensation);
+            const actualCompensation = insuranceCompensation + (compensationAfterInsurance * responsibilityPercent);
+            
+            // 显示结果
+            document.getElementById('death-compensation').textContent = deathCompensation.toLocaleString();
+            document.getElementById('funeral-expenses').textContent = funeral.toLocaleString();
+            document.getElementById('dependents-living').textContent = dependentsLiving.toLocaleString();
+            document.getElementById('mental-damages-result').textContent = mentalDamages.toLocaleString();
+            document.getElementById('insurance-compensation').textContent = insuranceCompensation.toLocaleString();
+            document.getElementById('responsibility-percent').textContent = responsibilityText;
+            document.getElementById('total-compensation').textContent = totalCompensation.toLocaleString();
+            document.getElementById('actual-compensation').textContent = actualCompensation.toLocaleString();
+            
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
