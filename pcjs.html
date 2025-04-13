@@ -23,7 +23,7 @@
         .form-group {
             margin-bottom: 20px;
             padding: 15px;
-            background #f9f9f9;
+            background-color: #f9f9f9;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
@@ -34,7 +34,7 @@
         }
         input, select {
             width: 100%;
-: 10px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
@@ -83,7 +83,7 @@
         }
         .note {
             font-size: 14px;
-            color: #8c8d;
+            color: #7f8c8d;
             margin-top: 30px;
             padding: 15px;
             background-color: #f5f5f5;
@@ -165,6 +165,21 @@
             background-color: #3498db;
             color: white;
         }
+        /* 新增日期输入样式 */
+        .date-input-group {
+            display: flex;
+            gap: 5px;
+        }
+        .date-input-group input {
+            flex: 1;
+            min-width: 0;
+        }
+        .date-input-group span {
+            flex: none;
+            width: 20px;
+            text-align: center;
+            line-height: 40px;
+        }
     </style>
 </head>
 <body>
@@ -203,7 +218,14 @@
         </div>
         
         <div id="birthday-tab" class="hidden">
-            <input type="date" id="victim-birthday">
+            <div class="date-input-group">
+                <input type="number" id="victim-year" min="1900" max="2100" placeholder="年">
+                <span>年</span>
+                <input type="number" id="victim-month" min="1" max="12" placeholder="月">
+                <span>月</span>
+                <input type="number" id="victim-day" min="1" max="31" placeholder="日">
+                <span>日</span>
+            </div>
         </div>
         
         <label for="victim-type">死者类型:</label>
@@ -213,7 +235,7 @@
             <option value="motor">机动车</option>
         </select>
         
-        <label for="opp">对方类型:</label>
+        <label for="opposite-type">对方类型:</label>
         <select id="opposite-type">
             <option value="pedestrian">行人</option>
             <option value="non-motor">非机动车</option>
@@ -223,7 +245,8 @@
         <label for="responsibility">责任比例:</label>
         <select id="responsibility">
             <option value="full">对方全责(100%)</option>
-            <option value="major">对方主责(70%)</option <option value="equal">同等责任(50%)</option>
+            <option value="major">对方主责(70%)</option>
+            <option value="equal">同等责任(50%)</option>
             <option value="minor">对方次责(30%)</option>
             <option value="none">无责(0%)</option>
         </select>
@@ -279,7 +302,7 @@
             <span class="result-label">总计赔偿金额:</span>
             <span id="total-compensation" class="result-value">0</span> 元
         </div>
-        <div class="result-item" style="font-weight: bold; font-size: 20px;">
+        <div class="result-item, style="font-weight: bold; font-size: 20px;">
             <span class="result-label">对方实际应赔偿:</span>
             <span id="actual-compensation" class="result-value">0</span> 元
         </div>
@@ -344,6 +367,13 @@
             document.getElementById('salary').value = 94818;
             document.getElementById('victim-age').value = 30;
             document.getElementById('mental-damages').value = 80000;
+            
+            // 设置默认出生日期（当前日期30年前）
+            const today = new Date();
+            document.getElementById('victim-year').value = today.getFullYear() - 30;
+            document.getElementById('victim-month').value = today.getMonth() + 1;
+            document.getElementById('victim-day').value = today.getDate();
+            
             updateFuneralExpense();
         }
         
@@ -381,8 +411,15 @@
                 </div>
                 
                 <div id="dependent-birthday-${dependentCount}" class="hidden">
-                    <input type="date" id="dependent-birthday-input-${dependentCount}">
-div>
+                    <div class="date-input-group">
+                        <input type="number" id="dependent-year-${dependentCount}" min="1900" max="2100" placeholder="年">
+                        <span>年</span>
+                        <input type="number" id="dependent-month-${dependentCount}" min="1" max="12" placeholder="月">
+                        <span>月</span>
+                        <input type="number" id="dependent-day-${dependentCount}" min="1" max="31" placeholder="日">
+                        <span>日</span>
+                    </div>
+                </div>
                 
                 <label for="dependent-relation-${dependentCount}">与被扶养人关系:</label>
                 <select id="dependent-relation-${dependentCount}">
@@ -426,16 +463,18 @@ div>
         }
         
         // 计算年龄
-        function calculateAge(birthday) {
-            if (!birthday) return 0;
+        function calculateAge(year, month, day) {
+            if (!year || !month || !day) return 0;
             
-            const birthDate = new Date(birthday);
             const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1;
+            const currentDay = today.getDate();
             
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
+            let age = currentYear - year;
             
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            // 如果当前月份小于出生月份，或者月份相同但日期小于出生日期，年龄减1
+            if (currentMonth < month || (currentMonth === month && currentDay < day)) {
                 age--;
             }
             
@@ -462,8 +501,10 @@ div>
                 if (document.querySelector('.tab:nth-child(1)').classList.contains('active')) {
                     victimAge = parseInt(document.getElementById('victim-age').value) || 0;
                 } else {
-                    const birthday = document.getElementById('victim-birthday').value;
-                    victimAge = calculateAge(birthday);
+                    const year = parseInt(document.getElementById('victim-year').value) || 0;
+                    const month = parseInt(document.getElementById('victim-month').value) || 0;
+                    const day = parseInt(document.getElementById('victim-day').value) || 0;
+                    victimAge = calculateAge(year, month, day);
                 }
                 
                 // 获取其他输入值
@@ -495,9 +536,15 @@ div>
                         age = parseInt(ageInput ? ageInput.value : 0) || 0;
                     } else {
                         // 输入出生日期
-                        const birthdayInput = container.querySelector(`#dependent-birthday-input-${i}`);
-                        const birthday = birthdayInput ? birthdayInput.value : '';
-                        age = calculateAge(birthday);
+                        const yearInput = container.querySelector(`#dependent-year-${i}`);
+                        const monthInput = container.querySelector(`#dependent-month-${i}`);
+                        const dayInput = container.querySelector(`#dependent-day-${i}`);
+                        
+                        const year = parseInt(yearInput ? yearInput.value : 0) || 0;
+                        const month = parseInt(monthInput ? monthInput.value : 0) || 0;
+                        const day = parseInt(dayInput ? dayInput.value : 0) || 0;
+                        
+                        age = calculateAge(year, month, day);
                     }
                     
                     // 计算抚养年限
