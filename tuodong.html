@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>数字拖动游戏</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            touch-action: manipulation;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .numbers-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .number {
+            width: 60px;
+            height: 60px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-drag: element;
+            touch-action: none;
+        }
+        
+        .number:active {
+            cursor: grabbing;
+        }
+        
+        .drop-zone {
+            min-height: 100px;
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .drop-zone.highlight {
+            border-color: #4CAF50;
+            background-color: #f0fff0;
+        }
+        
+        .dropped-number {
+            width: 50px;
+            height: 50px;
+            background-color: #2196F3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            position: absolute;
+        }
+        
+        .reset-btn {
+            padding: 10px 20px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .reset-btn:hover {
+            background-color: #d32f2f;
+        }
+        
+        #draggingClone {
+            position: absolute;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        @media (max-width: 600px) {
+            .number {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .dropped-number {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>数字拖动游戏</h1>
+    <p>将下面的数字拖动到下方的框中</p>
+    
+    <div class="container">
+        <div class="numbers-container" id="numbers">
+            <div class="number" draggable="true" data-value="1">1</div>
+            <div class="number" draggable="true" data-value="2">2</div>
+            <div class="number" draggable="true" data-value="3">3</div>
+            <div class="number" draggable="true" data-value="4">4</div>
+            <div class="number" draggable="true" data-value="5">5</div>
+            <div class="number" draggable="true" data-value="6">6</div>
+            <div class="number" draggable="true" data-value="7">7</div>
+            <div class="number" draggable="true" data-value="8">8</div>
+            <div class="number" draggable="true" data-value="9">9</div>
+            <div class="number" draggable="true" data-value="0">0</div>
+        </div>
+        
+        <h2>拖放到这里</h2>
+        <div class="drop-zone" id="dropZone">
+            <p>将数字拖放到这里...</p>
+        </div>
+        
+        <button class="reset-btn" id="resetBtn">重置</button>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const numbers = document.querySelectorAll('.number');
+            const dropZone = document.getElementById('dropZone');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // 为每个数字添加事件监听器
+            numbers.forEach(number => {
+                // 桌面端拖动事件
+                number.addEventListener('dragstart', dragStart);
+                number.addEventListener('dragend', dragEnd);
+                
+                // 移动端触摸事件
+                number.addEventListener('touchstart', touchStart, { passive: false });
+                number.addEventListener('touchmove', touchMove, { passive: false });
+                number.addEventListener('touchend', touchEnd);
+            });
+            
+            // 放置区域事件
+            dropZone.addEventListener('dragover', dragOver);
+            dropZone.addEventListener('dragenter', dragEnter);
+            dropZone.addEventListener('dragleave', dragLeave);
+            dropZone.addEventListener('drop', drop);
+            
+            // 移动端放置区域事件
+            dropZone.addEventListener('touchmove', preventScroll, { passive: false });
+            dropZone.addEventListener('touchend', touchDrop);
+            
+            // 重置按钮
+            resetBtn.addEventListener('click', reset);
+            
+            let draggedNumber = null;
+            let touchOffset = { x: 0, y: 0 };
+            
+            // 桌面端拖动函数
+            function dragStart(e) {
+                draggedNumber = e.target;
+                e.dataTransfer.setData('text/plain', e.target.dataset.value);
+                e.dataTransfer.effectAllowed = 'copy';
+                setTimeout(() => {
+                    e.target.style.visibility = 'hidden';
+                }, 0);
+            }
+            
+            function dragEnd(e) {
+                e.target.style.visibility = 'visible';
+                draggedNumber = null;
+            }
+            
+            function dragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            }
+            
+            function dragEnter(e) {
+                e.preventDefault();
+                this.classList.add('highlight');
+            }
+            
+            function dragLeave() {
+                this.classList.remove('highlight');
+            }
+            
+            function drop(e) {
+                e.preventDefault();
+                this.classList.remove('highlight');
+                
+                const value = e.dataTransfer.getData('text/plain');
+                createDroppedNumber(value, e.clientX, e.clientY);
+                
+                if (draggedNumber) {
+                    draggedNumber.style.visibility = 'visible';
+                    draggedNumber = null;
+                }
+            }
+            
+            // 移动端触摸函数
+            function touchStart(e) {
+                e.preventDefault();
+                draggedNumber = e.target;
+                
+                const touch = e.touches[0];
+                const rect = e.target.getBoundingClientRect();
+                
+                touchOffset = {
+                    x: touch.clientX - rect.left,
+                    y: touch.clientY - rect.top
+                };
+                
+                // 创建拖动元素的副本
+                const clone = e.target.cloneNode(true);
+                clone.id = 'draggingClone';
+                clone.style.position = 'absolute';
+                clone.style.left = (rect.left) + 'px';
+                clone.style.top = (rect.top) + 'px';
+                clone.style.zIndex = '1000';
+                clone.style.pointerEvents = 'none';
+                document.body.appendChild(clone);
+                
+                // 隐藏原始元素
+                e.target.style.visibility = 'hidden';
+            }
+            
+            function touchMove(e) {
+                if (!draggedNumber) return;
+                e.preventDefault();
+                
+                const touch = e.touches[0];
+                const clone = document.getElementById('draggingClone');
+                
+                if (clone) {
+                    clone.style.left = (touch.clientX - touchOffset.x) + 'px';
+                    clone.style.top = (touch.clientY - touchOffset.y) + 'px';
+                }
+                
+                // 检查是否在放置区域上方
+                const dropRect = dropZone.getBoundingClientRect();
+                const isOverDropZone = 
+                    touch.clientX >= dropRect.left && 
+                    touch.clientX <= dropRect.right && 
+                    touch.clientY >= dropRect.top && 
+                    touch.clientY <= dropRect.bottom;
+                
+                if (isOverDropZone) {
+                    dropZone.classList.add('highlight');
+                } else {
+                    dropZone.classList.remove('highlight');
+                }
+            }
+            
+            function touchEnd(e) {
+                if (!draggedNumber) return;
+                
+                const touch = e.changedTouches[0];
+                const dropRect = dropZone.getBoundingClientRect();
+                const isOverDropZone = 
+                    touch.clientX >= dropRect.left && 
+                    touch.clientX <= dropRect.right && 
+                    touch.clientY >= dropRect.top && 
+                    touch.clientY <= dropRect.bottom;
+                
+                if (isOverDropZone) {
+                    createDroppedNumber(draggedNumber.dataset.value, touch.clientX, touch.clientY);
+                }
+                
+                // 清理
+                const clone = document.getElementById('draggingClone');
+                if (clone) {
+                    document.body.removeChild(clone);
+                }
+                
+                if (draggedNumber) {
+                    draggedNumber.style.visibility = 'visible';
+                    draggedNumber = null;
+                }
+                
+                dropZone.classList.remove('highlight');
+            }
+            
+            function touchDrop(e) {
+                e.preventDefault();
+            }
+            
+            function preventScroll(e) {
+                e.preventDefault();
+            }
+            
+            // 创建放置的数字
+            function createDroppedNumber(value, clientX, clientY) {
+                const dropZoneRect = dropZone.getBoundingClientRect();
+                
+                const droppedNumber = document.createElement('div');
+                droppedNumber.className = 'dropped-number';
+                droppedNumber.textContent = value;
+                droppedNumber.dataset.value = value;
+                
+                // 计算在放置区域内的相对位置
+                const x = clientX - dropZoneRect.left - 25; // 25是元素宽度的一半
+                const y = clientY - dropZoneRect.top - 25;
+                
+                droppedNumber.style.left = Math.max(10, Math.min(dropZoneRect.width - 60, x)) + 'px';
+                droppedNumber.style.top = Math.max(10, Math.min(dropZoneRect.height - 60, y)) + 'px';
+                
+                dropZone.appendChild(droppedNumber);
+                
+                // 移除初始提示文本
+                const promptText = dropZone.querySelector('p');
+                if (promptText) {
+                    dropZone.removeChild(promptText);
+                }
+            }
+            
+            // 重置函数
+            function reset() {
+                const droppedNumbers = dropZone.querySelectorAll('.dropped-number');
+                droppedNumbers.forEach(num => dropZone.removeChild(num));
+                
+                if (!dropZone.querySelector('p')) {
+                    const promptText = document.createElement('p');
+                    promptText.textContent = '将数字拖放到这里...';
+                    dropZone.appendChild(promptText);
+                }
+                
+                numbers.forEach(num => {
+                    num.style.visibility = 'visible';
+                });
+                
+                const clone = document.getElementById('draggingClone');
+                if (clone) {
+                    document.body.removeChild(clone);
+                }
+                
+                draggedNumber = null;
+            }
+        });
+    </script>
+</body>
+</html>
