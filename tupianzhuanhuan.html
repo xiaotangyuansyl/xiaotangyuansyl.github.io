@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片尺寸转换器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #3498db, #1e5f8a);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-weight: 300;
+            opacity: 0.9;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 25px;
+        }
+        
+        .upload-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            border-right: 1px solid #eee;
+        }
+        
+        .preview-section {
+            flex: 2;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .panel {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .panel-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        
+        .panel-title i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        .file-upload {
+            position: relative;
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: #eaf6ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-upload:hover {
+            background-color: #d4edff;
+            border-color: #2980b9;
+        }
+        
+        .file-upload input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-upload p {
+            margin-top: 15px;
+            color: #3498db;
+            font-weight: 500;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .checkbox-group input {
+            margin-right: 10px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-download {
+            background-color: #27ae60;
+        }
+        
+        .btn-download:hover {
+            background-color: #219653;
+        }
+        
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+        
+        .image-box {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .image-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .preview-img {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .preview-img img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+        
+        .placeholder-text {
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        .dimensions {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .result-container {
+            margin-top: 30px;
+        }
+        
+        .result-preview {
+            height: 350px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .result-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+            background-color: #f8f9fa;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .upload-section {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图片尺寸转换器</h1>
+            <p class="subtitle">上传图片并转换为任意尺寸 - 支持下载转换结果</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="upload-section">
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i>📁</i> 选择图片
+                    </h2>
+                    <div class="file-upload">
+                        <input type="file" id="imageInput" accept="image/*">
+                        <i>📤</i>
+                        <p>点击或拖放图片到此处</p>
+                        <p>支持 JPG, PNG, GIF 格式</p>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i>⚙️</i> 尺寸设置
+                    </h2>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label for="width">宽度 (像素)</label>
+                            <input type="number" id="width" min="1" value="800">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label for="height">高度 (像素)</label>
+                            <input type="number" id="height" min="1" value="600">
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="keepRatio" checked>
+                        <label for="keepRatio">保持原始宽高比</label>
+                    </div>
+                    
+                    <button id="resizeBtn" class="btn">转换图片尺寸</button>
+                </div>
+                
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i>👁️</i> 原始图片预览
+                    </h2>
+                    <div class="image-container">
+                        <div class="image-box">
+                            <div class="preview-img" id="originalPreview">
+                                <div class="placeholder-text">图片预览区域</div>
+                                <img id="originalImage" alt="原始图片">
+                            </div>
+                            <div class="dimensions" id="originalDimensions">未选择图片</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i>🖼️</i> 转换结果
+                    </h2>
+                    <div class="result-container">
+                        <div class="result-preview" id="resultPreview">
+                            <div class="placeholder-text">转换结果将显示在这里</div>
+                            <img id="resultImage" alt="转换后的图片">
+                        </div>
+                        <div class="dimensions" id="resultDimensions">等待转换...</div>
+                        
+                        <div class="action-buttons">
+                            <button id="downloadBtn" class="btn btn-download" disabled>下载转换后的图片</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i>ℹ️</i> 使用说明
+                    </h2>
+                    <div class="instructions">
+                        <p>1. 点击上方区域或拖放图片到上传区域</p>
+                        <p>2. 在尺寸设置中调整您需要的宽度和高度</p>
+                        <p>3. 勾选"保持原始宽高比"可避免图片变形</p>
+                        <p>4. 点击"转换图片尺寸"按钮进行处理</p>
+                        <p>5. 转换完成后可下载新尺寸的图片</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025 图片尺寸转换器 | 使用HTML5 Canvas技术实现 | 所有处理在浏览器中完成，不上传至服务器</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM元素
+            const imageInput = document.getElementById('imageInput');
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
+            const keepRatioCheckbox = document.getElementById('keepRatio');
+            const resizeBtn = document.getElementById('resizeBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const originalImage = document.getElementById('originalImage');
+            const resultImage = document.getElementById('resultImage');
+            const originalPreview = document.getElementById('originalPreview');
+            const resultPreview = document.getElementById('resultPreview');
+            const originalDimensions = document.getElementById('originalDimensions');
+            const resultDimensions = document.getElementById('resultDimensions');
+            
+            // 存储原始图片数据
+            let originalImageData = null;
+            let originalWidth = 0;
+            let originalHeight = 0;
+            let ratio = 0;
+            
+            // 图片上传处理
+            imageInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        // 加载原始图片
+                        originalImage.src = event.target.result;
+                        originalImage.style.display = 'block';
+                        originalPreview.querySelector('.placeholder-text').style.display = 'none';
+                        
+                        // 存储原始图片数据
+                        originalImageData = event.target.result;
+                        
+                        // 获取原始图片尺寸
+                        originalImage.onload = function() {
+                            originalWidth = originalImage.naturalWidth;
+                            originalHeight = originalImage.naturalHeight;
+                            ratio = originalWidth / originalHeight;
+                            
+                            // 显示原始尺寸
+                            originalDimensions.textContent = `原始尺寸: ${originalWidth} × ${originalHeight} 像素`;
+                            
+                            // 设置默认转换尺寸（保持比例）
+                            if (keepRatioCheckbox.checked) {
+                                const maxDimension = 800;
+                                if (originalWidth > originalHeight) {
+                                    widthInput.value = maxDimension;
+                                    heightInput.value = Math.round(maxDimension / ratio);
+                                } else {
+                                    heightInput.value = maxDimension;
+                                    widthInput.value = Math.round(maxDimension * ratio);
+                                }
+                            } else {
+                                widthInput.value = 800;
+                                heightInput.value = 600;
+                            }
+                            
+                            // 启用转换按钮
+                            resizeBtn.disabled = false;
+                        };
+                    };
+                    
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            // 保持比例功能
+            function updateDimensions() {
+                if (keepRatioCheckbox.checked && ratio && originalWidth) {
+                    if (this === widthInput) {
+                        heightInput.value = Math.round(parseInt(widthInput.value) / ratio);
+                    } else if (this === heightInput) {
+                        widthInput.value = Math.round(parseInt(heightInput.value) * ratio);
+                    }
+                }
+            }
+            
+            widthInput.addEventListener('input', updateDimensions);
+            heightInput.addEventListener('input', updateDimensions);
+            keepRatioCheckbox.addEventListener('change', updateDimensions);
+            
+            // 转换图片尺寸
+            resizeBtn.addEventListener('click', function() {
+                if (!originalImageData) {
+                    alert('请先上传图片');
+                    return;
+                }
+                
+                const newWidth = parseInt(widthInput.value);
+                const newHeight = parseInt(heightInput.value);
+                
+                if (isNaN(newWidth) || isNaN(newHeight) || newWidth <= 0 || newHeight <= 0) {
+                    alert('请输入有效的宽度和高度值');
+                    return;
+                }
+                
+                // 使用Canvas处理图片
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 设置新尺寸
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                
+                // 创建临时图片加载
+                const img = new Image();
+                img.src = originalImageData;
+                
+                img.onload = function() {
+                    // 在Canvas上绘制调整尺寸后的图片
+                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                    
+                    // 获取转换后的图片数据
+                    const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // 显示结果
+                    resultImage.src = resizedDataUrl;
+                    resultImage.style.display = 'block';
+                    resultPreview.querySelector('.placeholder-text').style.display = 'none';
+                    resultDimensions.textContent = `新尺寸: ${newWidth} × ${newHeight} 像素`;
+                    
+                    // 启用下载按钮
+                    downloadBtn.disabled = false;
+                };
+            });
+            
+            // 下载图片
+            downloadBtn.addEventListener('click', function() {
+                if (!resultImage.src) return;
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = 'resized-image.jpg';
+                link.href = resultImage.src;
+                link.click();
+            });
+            
+            // 拖放功能
+            const dropArea = document.querySelector('.file-upload');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.style.backgroundColor = '#d4edff';
+                dropArea.style.borderColor = '#2980b9';
+            }
+            
+            function unhighlight() {
+                dropArea.style.backgroundColor = '#eaf6ff';
+                dropArea.style.borderColor = '#3498db';
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    imageInput.files = files;
+                    
+                    // 触发change事件
+                    const event = new Event('change', { bubbles: true });
+                    imageInput.dispatchEvent(event);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
